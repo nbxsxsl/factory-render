@@ -1,0 +1,13 @@
+{
+  "name": "factory-backend-cloud",
+  "version": "2.1.0",
+  "description": "加工厂报工系统后端（Render 云端版）：Node + SQLite + WebSocket + GitHub 备份",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": { "node": ">=22" }
+}
