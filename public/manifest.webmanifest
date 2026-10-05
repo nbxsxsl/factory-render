@@ -1,0 +1,12 @@
+{
+  "name": "加工厂领料报工系统",
+  "short_name": "报工系统",
+  "description": "拍照识别单据 · 分单到人 · 报工计件",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F6FA",
+  "theme_color": "#7C5CFF",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
