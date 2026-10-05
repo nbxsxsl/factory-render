@@ -1,0 +1,4351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#7C5CFF" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="报工系统" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icon.svg" />
+<title>加工厂领料报工系统</title>
+<style>
+:root{
+  --bg:#F5F6FA; --card:#FFFFFF; --text-1:#1B1D29; --text-2:#4A4F63; --text-3:#8A90A6;
+  --primary:#7C5CFF; --primary-soft:#EFEBFF; --green:#12B76A; --green-soft:#E6F7EF;
+  --orange:#F79009; --orange-soft:#FFF4E5; --red:#F04438; --red-soft:#FEECEB;
+  --blue:#2E90FA; --blue-soft:#E9F3FF; --line:#EEF0F5; --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#E7E9F2;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--text-1);}
+
+/* ===== 手机壳 ===== */
+.phone-wrap{display:flex;justify-content:center;align-items:flex-start;padding:24px 12px;min-height:100vh;}
+.phone{width:420px;max-width:100%;background:var(--bg);border-radius:34px;box-shadow:0 24px 60px rgba(30,34,60,.22);overflow:hidden;position:relative;display:flex;flex-direction:column;height:860px;}
+.phone-status{height:34px;flex:0 0 34px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;color:var(--text-2);font-weight:600;}
+.screen{flex:1;overflow-y:auto;scroll-behavior:smooth;}
+.screen::-webkit-scrollbar{width:0}
+
+/* ===== 手机真机全屏：去掉模拟壳 ===== */
+@media (max-width:520px){
+  .phone-wrap{padding:0;}
+  .phone{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none;}
+  .phone-status{display:none;}
+  .page{padding-top:10px;padding-bottom:96px;}
+}
+
+/* ===== 通用 ===== */
+.page{padding:14px 16px 90px;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.header{padding:10px 16px 14px;}
+.app-shell .page,.page{scrollbar-width:thin}
+.stat-card,.card,.order-card{transition:transform .15s ease,box-shadow .15s ease}
+.order-card:active{transform:scale(.985)}
+.quick-item:active{transform:scale(.94)}
+.quick-item{transition:transform .12s ease}
+.header.row-between{display:flex;align-items:flex-start;justify-content:space-between}
+.header-title{font-size:22px;font-weight:800;letter-spacing:.3px}
+.header-sub{font-size:12.5px;color:var(--text-3);margin-top:4px}
+.bell{position:relative;width:40px;height:40px;border-radius:14px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px rgba(30,34,60,.06);cursor:pointer}
+.badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+.card{background:var(--card);border-radius:var(--radius);padding:15px;margin-bottom:12px;box-shadow:0 4px 16px rgba(30,34,60,.05)}
+.card-title{font-size:14.5px;font-weight:800;margin-bottom:10px}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.row{display:flex;align-items:center;gap:8px}
+.bold{font-weight:700}
+.text-sm{font-size:12px}
+.text-2{color:var(--text-2);font-size:13px}
+.text-3{color:var(--text-3)}
+.money{font-size:15px;font-weight:800;color:var(--primary)}
+.money-sm{font-weight:800;color:var(--text-1);font-size:13.5px}
+.money-plus{font-weight:800;color:var(--green);font-size:13.5px}
+.divider{height:1px;background:var(--line);margin:11px 0}
+.empty{padding:70px 20px;text-align:center;color:var(--text-3);font-size:13.5px}
+.empty-emoji{display:block;font-size:44px;margin-bottom:12px}
+
+/* ===== 标签 ===== */
+.tag{padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.tag-processing{background:var(--primary-soft);color:var(--primary)}
+.tag-approved{background:var(--green-soft);color:var(--green)}
+.tag-pending{background:var(--orange-soft);color:var(--orange)}
+.tag-rejected{background:var(--red-soft);color:var(--red)}
+.tag-overdue{background:var(--red-soft);color:var(--red)}
+.tag-warn{background:var(--orange-soft);color:var(--orange)}
+.tag-done{background:var(--blue-soft);color:var(--blue)}
+
+/* ===== 按钮 ===== */
+button{font-family:inherit;border:none;cursor:pointer}
+.btn-primary{width:100%;padding:13px;border-radius:14px;background:linear-gradient(135deg,#8D6CFF,#6E45FF);color:#fff;font-size:15px;font-weight:800;box-shadow:0 8px 20px rgba(110,69,255,.28)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-ghost{padding:11px;border-radius:12px;background:#F1F2F7;color:var(--text-2);font-size:13.5px;font-weight:700}
+.btn-mini{padding:8px 14px;border-radius:12px;background:var(--primary);color:#fff;font-size:13px;font-weight:700}
+.btn-mini-red{padding:8px 14px;border-radius:12px;background:var(--red-soft);color:var(--red);font-size:13px;font-weight:700}
+.btn-mini-green{padding:8px 14px;border-radius:12px;background:var(--green);color:#fff;font-size:13px;font-weight:700}
+.input{width:100%;padding:12px 14px;border-radius:13px;border:1.5px solid var(--line);background:#FAFBFC;font-size:14.5px;font-family:inherit;color:var(--text-1);outline:none}
+.input:focus{border-color:var(--primary);background:#fff}
+select.input{appearance:none}
+
+/* ===== 底部 tabbar ===== */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:66px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;align-items:center;padding-bottom:4px}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--text-3);cursor:pointer;font-weight:600}
+.tab-item .tab-ico{font-size:20px;filter:grayscale(1);opacity:.55}
+.tab-item.on{color:var(--primary)}
+.tab-item.on .tab-ico{filter:none;opacity:1;transform:translateY(-1px)}
+
+/* ===== 首页 ===== */
+.hero{background:linear-gradient(135deg,#7C5CFF,#5B34F0);color:#fff;border-radius:22px;padding:20px;margin-bottom:12px;box-shadow:0 14px 30px rgba(91,52,240,.3)}
+.hero-label{font-size:12.5px;opacity:.85;font-weight:600}
+.hero-money{font-size:30px;font-weight:800;margin:6px 0 4px;letter-spacing:.5px}
+.hero-row{display:flex;gap:10px;margin-top:14px}
+.hero-cell{flex:1;background:rgba(255,255,255,.16);border-radius:14px;padding:10px 12px}
+.hero-cell .k{font-size:11.5px;opacity:.85}
+.hero-cell .v{font-size:17px;font-weight:800;margin-top:3px}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.stat-card{background:var(--card);border-radius:16px;padding:13px 12px;box-shadow:0 4px 16px rgba(30,34,60,.05)}
+.stat-num{font-size:21px;font-weight:800}
+.stat-label{font-size:11.5px;color:var(--text-3);font-weight:600}
+.stat-money{font-size:16px;font-weight:800;color:var(--primary)}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.quick-item{background:var(--card);border-radius:16px;padding:14px 8px;text-align:center;box-shadow:0 4px 16px rgba(30,34,60,.05);cursor:pointer;transition:.15s}
+.quick-item:active{transform:scale(.96)}
+.quick-ico{font-size:24px;margin-bottom:6px}
+.quick-txt{font-size:12px;font-weight:700;color:var(--text-2)}
+
+/* ===== 进度 ===== */
+.progress-wrap{margin-top:8px}
+.progress-bar{height:8px;border-radius:6px;background:#F0F1F6;overflow:hidden}
+.progress-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#8D6CFF,#6E45FF);transition:width .3s}
+/* ===== 登录注册：校验/加载态 ===== */
+.input-err{border-color:var(--red)!important;background:var(--red-soft)!important}
+.field-err{display:none;color:var(--red);font-size:12.5px;margin-top:5px;line-height:1.4}
+.btn-primary:disabled{opacity:.55;pointer-events:none}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,255,.15)}
+.rank-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.rank-no{width:24px;height:24px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:#F1F2F7;color:var(--text-2)}
+.rank-no.g1{background:#FFF4D6;color:#B98900}
+.rank-no.g2{background:#EEF0F5;color:#6B7280}
+.rank-no.g3{background:#FBEADA;color:#B4691A}
+
+/* ===== 订单卡 ===== */
+.order-card{cursor:pointer;transition:.15s}
+.order-card:active{background:#FAFAFE}
+.card-hint{font-size:12px;color:var(--text-3);text-align:center;margin-top:-4px;margin-bottom:12px}
+.alert-card{background:linear-gradient(135deg,#FFF6F5,#FFEDEB);border:1px solid #FFD9D5}
+.alert-item{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px dashed #FFD9D5}
+.alert-item:last-child{border-bottom:none}
+
+/* ===== 项目 / 步骤 ===== */
+.step-item{padding:11px 0;border-bottom:1px solid var(--line)}
+.step-item:last-child{border-bottom:none}
+.step-name{font-size:14px}
+.check{width:26px;height:26px;border-radius:9px;border:2px solid #D8DAE5;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;cursor:pointer;flex:0 0 26px;transition:.15s}
+.check.on{background:var(--primary);border-color:var(--primary);box-shadow:0 4px 10px rgba(124,92,255,.35)}
+.qty-row{display:flex;align-items:center;gap:10px;margin-top:9px}
+.qty-input{flex:1;padding:9px 12px;font-size:14px}
+
+.chip-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.chip-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;background:#FAFBFC;border:1.5px solid var(--line);margin-bottom:8px;cursor:pointer;transition:.15s}
+.chip-row.on{border-color:var(--primary);background:var(--primary-soft)}
+.chip-name{font-size:14px;font-weight:700}
+.chip-price{font-size:12.5px;color:var(--text-3)}
+.chip-check{width:22px;height:22px;border-radius:8px;border:2px solid #D8DAE5;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800}
+.chip-row.on .chip-check{background:var(--primary);border-color:var(--primary)}
+
+.switch-row{display:flex;gap:10px;margin-top:8px}
+.switch-btn{flex:1;padding:12px;border-radius:14px;background:#FAFBFC;border:1.5px solid var(--line);text-align:center;font-size:14px;font-weight:700;color:var(--text-2);cursor:pointer;transition:.15s}
+.switch-btn.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+
+.seg{display:flex;background:#F1F2F7;border-radius:14px;padding:4px;margin-bottom:14px}
+.seg-item{flex:1;text-align:center;padding:9px;border-radius:11px;font-size:13.5px;font-weight:700;color:var(--text-3);cursor:pointer;transition:.15s}
+.seg-item.on{background:#fff;color:var(--primary);box-shadow:0 3px 10px rgba(30,34,60,.08)}
+
+/* ===== 加工费表格 ===== */
+.pay-table{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(30,34,60,.05);margin-bottom:12px}
+.tbl-head{display:flex;align-items:center;background:#F1F2F7;padding:9px 12px;font-size:12px;font-weight:800;color:var(--text-3)}
+.tbl-row{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.tbl-row:last-child{border-bottom:none}
+.tbl-row.total{background:rgba(124,92,255,.08);font-weight:800}
+.col-name{flex:1.6;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.col-qty{flex:1;text-align:right}
+.col-price{flex:1;text-align:right}
+.col-amt{flex:1.3;text-align:right;font-weight:800;color:var(--green)}
+.pick-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pick-item{flex:1;background:#fff;border-radius:12px;padding:11px 14px;font-size:13px;text-align:center;box-shadow:0 4px 16px rgba(30,34,60,.05);cursor:pointer}
+.pick-item.active{background:rgba(124,92,255,.15);color:var(--primary);font-weight:800}
+.pick-item input{border:none;background:transparent;font:inherit;color:inherit;text-align:center;width:100%;outline:none}
+.model-badge{display:inline-block;padding:2px 10px;border-radius:8px;background:rgba(124,92,255,.15);color:var(--primary);font-weight:800;font-size:12px}
+.tabs{display:flex;gap:16px;padding:0 16px 10px;border-bottom:1px solid var(--line);margin-bottom:12px;overflow-x:auto}
+.tab{font-size:13.5px;font-weight:700;color:var(--text-3);padding-bottom:8px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--primary);border-bottom-color:var(--primary)}
+
+.kv{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--text-3)}
+.kv .v{font-weight:700;text-align:right;max-width:62%}
+
+/* ===== 报工 ===== */
+.work-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.work-row:last-child{border-bottom:none}
+.work-info{flex:1;min-width:0}
+.work-input-wrap{display:flex;gap:6px;align-items:center}
+.work-input{width:82px;padding:9px 10px;font-size:14px;text-align:center}
+.work-submit{padding:9px 13px;border-radius:11px;font-size:13px;box-shadow:none}
+.detail-row{padding:9px 0;border-bottom:1px solid var(--line)}
+.detail-row:last-child{border-bottom:none}
+
+/* ===== 拍照/识别 ===== */
+.cam-box{border:2px dashed #D8DAE5;border-radius:18px;padding:26px 16px;text-align:center;background:#FAFBFC}
+.cam-ico{font-size:40px}
+.ocr-card{background:linear-gradient(135deg,#F3F7FF,#EAF2FF);border:1px solid #DCE8FF}
+.ocr-line{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px dashed #DCE8FF}
+.ocr-line:last-child{border-bottom:none}
+.ocr-line .k{color:var(--text-3)}
+.ocr-line .v{font-weight:700;text-align:right}
+.screw-card{background:linear-gradient(135deg,#FFF8EC,#FFF1DC);border:1px solid #FFE0B2}
+.screw-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed #FFE0B2}
+.screw-row:last-child{border-bottom:none}
+.screw-model-input{flex:1;border:1px solid #FFE0B2;background:#fff;border-radius:9px;padding:6px 10px;font-size:12.5px;color:var(--text);outline:none}
+.screw-model-input:focus{border-color:var(--primary)}
+
+/* 工艺提醒 */
+.craft-card{border-left:4px solid var(--orange);background:linear-gradient(135deg,#FFFBF3,#FFF6E6)}
+.craft-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed #FFE0B2;font-size:13px}
+.craft-row:last-child{border-bottom:none}
+.craft-model{min-width:64px;text-align:center;padding:4px 10px;border-radius:9px;background:var(--orange-soft);color:var(--orange);font-weight:800;font-size:12.5px}
+.craft-name{flex:1;min-width:0;color:var(--text)}
+.craft-qty{color:var(--text-3);font-size:12px}
+
+/* 订单进度 */
+.prog-row{margin-top:9px}
+.prog-bar{height:7px;background:var(--line);border-radius:5px;margin-top:5px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#7C5CFF,#B05CFF);border-radius:5px;transition:width .3s}
+.prog-fill-full{background:var(--green)}
+.prog-full{color:var(--green);font-weight:800}
+.pick{padding:7px 12px;border-radius:11px;background:#fff;border:1.5px solid #FFD08A;font-size:12.5px;font-weight:700;color:#B4691A;cursor:pointer;white-space:nowrap}
+.pick.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.dot-red{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:5px;vertical-align:middle}
+.dot-green{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:middle}
+.snap{animation:snap .5s ease}
+@keyframes snap{0%{transform:scale(.9);opacity:.4}100%{transform:scale(1);opacity:1}}
+
+/* ===== 登录 ===== */
+.login-wrap{padding:60px 26px 26px;text-align:center}
+.login-logo{font-size:56px;margin-bottom:12px}
+.login-title{font-size:24px;font-weight:800}
+.login-sub{font-size:13px;color:var(--text-3);margin:8px 0 30px;line-height:1.6}
+.login-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(30,34,60,.1);text-align:left}
+.field{margin-bottom:12px}
+.field-label{font-size:12.5px;font-weight:700;color:var(--text-2);margin-bottom:6px}
+.role-btn{display:flex;align-items:center;gap:12px;padding:15px;border-radius:16px;background:var(--card);box-shadow:0 4px 16px rgba(30,34,60,.06);margin-bottom:10px;cursor:pointer;transition:.15s}
+.role-btn:active{transform:scale(.98)}
+.role-ico{font-size:26px}
+.role-t{font-size:15px;font-weight:800}
+.role-d{font-size:12px;color:var(--text-3);margin-top:2px}
+.role-arrow{margin-left:auto;color:var(--text-3);font-size:18px}
+
+/* ===== 弹窗 ===== */
+.mask{position:fixed;inset:0;background:rgba(20,22,36,.5);display:flex;align-items:center;justify-content:center;padding:22px;z-index:50;animation:fade .18s}
+.panel{background:#fff;border-radius:22px;padding:20px;width:100%;max-width:360px;max-height:82vh;overflow-y:auto}
+.panel-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:6px}
+.panel-sub{font-size:12.5px;color:var(--text-3);text-align:center;margin-bottom:14px;line-height:1.6}
+.modal-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:14px;background:#FAFBFC;border:1.5px solid var(--line);margin-bottom:9px}
+.modal-name{font-size:13.5px;font-weight:700}
+.modal-meta{font-size:11.5px;color:var(--text-3);margin-top:3px}
+.mini-btn{padding:8px 13px;border-radius:11px;font-size:12.5px;font-weight:700;background:#F1F2F7;color:var(--text-2)}
+.mini-btn.on{background:var(--primary);color:#fff}
+.mini-btn.on-green{background:var(--green);color:#fff}
+
+/* ===== 二维码 ===== */
+.qr-box{display:flex;justify-content:center;margin:6px 0 12px}
+.qr-grid{position:relative;width:168px;height:168px;background:#fff;border-radius:14px;padding:0;box-shadow:0 6px 20px rgba(30,34,60,.12)}
+.qr-dot{position:absolute;width:8px;height:8px;background:#1B1D29;border-radius:2px}
+.qr-code-big{text-align:center;font-size:26px;font-weight:800;letter-spacing:5px;color:var(--primary)}
+
+/* ===== 吐司 ===== */
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:rgba(27,29,41,.92);color:#fff;padding:11px 20px;border-radius:14px;font-size:13.5px;font-weight:600;z-index:99;animation:toastIn .2s;max-width:80%;text-align:center}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+</style>
+</head>
+<body>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="phone-status"><span id="clock">9:41</span><span>📶 🔋 100%</span></div>
+    <div class="screen" id="screen"></div>
+  </div>
+</div>
+
+<script>
+window.LAN_ORIGIN='__LAN_ORIGIN__'; /* 服务器渲染时替换为局域网直连地址 */
+/* qrcode-generator 1.4.4 (MIT) 内嵌：真二维码生成 */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+/* =========================================================
+   数据层
+   ========================================================= */
+const DEFAULT_PROJECTS = [
+  {id:'p_solder', name:'锡焊', price:0, builtin:true},
+  {id:'p_screw1', name:'电路板单螺丝', price:0, builtin:true},
+  {id:'p_batt', name:'插电池', price:0, builtin:true},
+  {id:'p_glue', name:'打胶水', price:0, builtin:true},
+  {id:'p_screw2', name:'成品螺丝', price:0, builtin:true},
+  {id:'p_insul', name:'插绝缘片', price:0, builtin:true}
+];
+const BASE = () => ({
+  users:[
+    {id:'w1', name:'张三', phone:'13800000001', workNo:'W001', role:'worker', status:'active', pwd:'123456'},
+    {id:'w2', name:'李四', phone:'13800000002', workNo:'W002', role:'worker', status:'active', pwd:'123456'},
+    {id:'w3', name:'王五', phone:'13800000003', workNo:'W003', role:'worker', status:'active', pwd:'123456'},
+    {id:'a1', name:'管理员', phone:'13900000001', workNo:'A001', role:'admin', status:'active', pwd:'123456'},
+    {id:'su1', name:'谢总', phone:'13251903281', workNo:'S001', role:'superadmin', status:'active', pwd:'xieyun123'}
+  ],
+  invites:[],
+  projects:DEFAULT_PROJECTS.map(p=>({...p})),
+  orders:[],
+  claims:[],
+  works:[],
+  notices:[],
+  settings:{deliveryRemindDays:3}
+});
+
+/* ---------- 演示数据 ---------- */
+function buildDemo(){
+  const DB = BASE();
+  const o1=makeOrder({workNo:'S221010003', saleNo:'S22031', productNo:'40400184', productName:'1#草地灯-无光碗 组装半成品', qty:50000, dateStr:'2022/10/10', hasSwitch:false, deliveryDate:addDays(2), projectIds:['p_solder','p_screw1','p_batt','p_glue','p_screw2','p_insul']});
+  o1.screwNotes=[
+    {name:'自攻螺丝 2*5 盐雾环保', model:'2*5', qty:50000},
+    {name:'自攻沉头螺丝 2.5*6', model:'2.5*6', qty:100000}
+  ];
+  const o2=makeOrder({workNo:'S221010004', saleNo:'S22032', productNo:'40400185', productName:'2#草地灯-带光碗 组装半成品', qty:30000, dateStr:'2022/10/12', hasSwitch:true, deliveryDate:addDays(6), projectIds:['p_solder','p_screw1','p_batt','p_glue','p_screw2']});
+  const o3=makeOrder({workNo:'S221010005', saleNo:'S22033', productNo:'40400186', productName:'3#草地灯-无光碗 组装半成品', qty:20000, dateStr:'2022/10/15', hasSwitch:false, deliveryDate:addDays(9), projectIds:['p_solder','p_batt','p_screw2','p_insul']});
+  DB.orders=[o1,o2,o3];
+  // 单价
+  const priceMap={'锡焊':0.12,'电路板单螺丝':0.06,'插电池':0.05,'打胶水':0.04,'成品螺丝':0.05,'插绝缘片':0.03};
+  DB.orders.forEach(o=>o.steps.forEach(s=>{ s.price=priceMap[s.name]||0; }));
+
+  // 已分配（生成待申领池）：o1 部分分配，o3 全部分配完毕
+  allocStep(o1,'锡焊',0.3); allocStep(o1,'电路板单螺丝',0.4); allocStep(o1,'打胶水',0.5);
+  allocStep(o3,'锡焊',1); allocStep(o3,'插电池',1); allocStep(o3,'成品螺丝',1); allocStep(o3,'插绝缘片',1);
+
+  // 申领记录
+  DB.claims.push({id:'c1', orderId:o1.id, items:[{stepId:stepId(o1,'锡焊'), qty:5000},{stepId:stepId(o1,'电路板单螺丝'), qty:4000}], workerId:'w1', status:'approved', time:todayStr()+' 08:20'});
+  DB.claims.push({id:'c2', orderId:o1.id, items:[{stepId:stepId(o1,'打胶水'), qty:3000}], workerId:'w2', status:'pending', time:todayStr()+' 09:05'});
+  DB.claims.push({id:'c3', orderId:o3.id, items:[{stepId:stepId(o3,'锡焊'), qty:20000}], workerId:'w1', status:'approved', time:addDays(-1)+' 15:40'});
+  DB.claims.push({id:'c4', orderId:o1.id, items:[{stepId:stepId(o1,'插电池'), qty:6000}], workerId:'w3', status:'rejected', reason:'该批次数量已安排给他人', time:addDays(-1)+' 11:10'});
+
+  // 报工记录（跨多天，用于工资按日期展示）
+  const addWork=(claim,sid,qty,t)=>{let o=null;DB.orders.forEach(x=>{if(x.id===claim.orderId)o=x;});const s=(o&&o.steps||[]).find(x=>x.id===sid)||{};DB.works.push({id:uid('k_'),claimId:claim.id,workerId:claim.workerId,orderId:claim.orderId,stepId:sid,qty,price:s.price||0,amount:Number((qty*(s.price||0)).toFixed(2)),ts:t});};
+  const D0=Date.now();
+  addWork(DB.claims[0],stepId(o1,'锡焊'),2000,D0-15*864e5+9*3600e3);
+  addWork(DB.claims[0],stepId(o1,'锡焊'),3500,D0-7*864e5+10*3600e3);
+  addWork(DB.claims[0],stepId(o1,'电路板单螺丝'),4000,D0-2*864e5+15*3600e3);
+  addWork(DB.claims[0],stepId(o1,'锡焊'),2000,D0-6*3600e3);
+  addWork(DB.claims[0],stepId(o1,'电路板单螺丝'),4000,D0-5*3600e3);
+  addWork(DB.claims[0],stepId(o1,'锡焊'),1000,D0-2*3600e3);
+  DB.works.push({id:uid('k_'),claimId:DB.claims[2].id,workerId:'w1',orderId:o3.id,stepId:stepId(o3,'锡焊'),qty:8000,price:0.12,amount:Number((8000*0.12).toFixed(2)),ts:D0-3*864e5+14*3600e3});
+  DB.works.push({id:uid('k_'),claimId:DB.claims[1].id,workerId:'w2',orderId:o1.id,stepId:stepId(o1,'打胶水'),qty:3000,price:0.04,amount:Number((3000*0.04).toFixed(2)),ts:D0-1*864e5+11*3600e3});
+  DB.works.push({id:uid('k_'),claimId:DB.claims[1].id,workerId:'w2',orderId:o1.id,stepId:stepId(o1,'打胶水'),qty:5000,price:0.04,amount:Number((5000*0.04).toFixed(2)),ts:D0-5*3600e3});
+
+  // 消息
+  DB.notices=[
+    {id:'n1', type:'delivery', title:'交期提醒', text:`${o1.workNo}（${o1.productName}）距离交期仅剩 2 天`, ts:Date.now()-3600e3, read:false},
+    {id:'n2', type:'claim', title:'申领已通过', text:`${o1.workNo} 的「锡焊 ×5000、电路板单螺丝 ×4000」已同意`, ts:Date.now()-4*3600e3, read:false},
+    {id:'n3', type:'system', title:'系统通知', text:'欢迎使用加工厂领料报工系统', ts:Date.now()-86400e3, read:true}
+  ];
+  return DB;
+}
+function makeOrder(o){
+  const steps = o.projectIds.map((pid,i)=>{
+    const p=DEFAULT_PROJECTS.find(x=>x.id===pid)||{name:pid,price:0};
+    return {id:'s_'+o.workNo+'_'+i, name:p.name, price:p.price, totalQty:Number(o.qty), assignedQty:0};
+  });
+  return {...o, id:'o_'+o.workNo, steps, allocated:false};
+}
+function stepId(o,name){const s=o.steps.find(x=>x.name===name);return s?s.id:null;}
+function allocStep(o,name,ratio){const s=o.steps.find(x=>x.name===name);if(s) s.assignedQty=Math.round(s.totalQty*ratio);}
+
+/* =========================================================
+   工具
+   ========================================================= */
+function uid(p){return p+Math.random().toString(36).slice(2,9);}
+function money(n){return Number(n||0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function todayStr(d){const t=d?new Date(d):new Date();return `${t.getFullYear()}/${String(t.getMonth()+1).padStart(2,'0')}/${String(t.getDate()).padStart(2,'0')}`;}
+function addDays(n){return todayStr(Date.now()+n*864e5);}
+function daysUntil(dateStr){if(!dateStr)return null;const d=new Date(String(dateStr).replace(/\//g,'-'));if(isNaN(d))return null;return Math.ceil((d.setHours(0,0,0,0)-new Date().setHours(0,0,0,0))/864e5);}
+function isToday(ts){const d=new Date(ts),n=new Date();return d.toDateString()===n.toDateString();}
+function isThisWeek(ts){const diff=Date.now()-ts;return diff>=0&&diff<7*864e5;}
+function isThisMonth(ts){const d=new Date(ts),n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();}
+function dayKey(ts){const d=new Date(ts);return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;}
+function dayLabel(ts){const d=new Date(ts),n=new Date(),y=new Date(Date.now()-864e5);const base=`${d.getMonth()+1}月${d.getDate()}日`;if(d.toDateString()===n.toDateString())return base+'（今天）';if(d.toDateString()===y.toDateString())return base+'（昨天）';const wd=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];return `${base} ${wd}`;}
+function monthKeyOf(ts){const d=new Date(ts);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
+function monthLabelOf(k){const p=String(k||'').split('-');return p.length===2?`${p[0]}年${Number(p[1])}月`:k;}
+function parseDay(s){if(!s)return 0;const p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]).getTime();}
+function parseDayEnd(s){return parseDay(s)+864e5-1;}
+function parseMonthStart(k){const p=String(k||'').split('-').map(Number);return new Date(p[0],p[1]-1,1).getTime();}
+function parseMonthEnd(k){const p=String(k||'').split('-').map(Number);return new Date(p[0],p[1],0,23,59,59,999).getTime();}
+function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function ym(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
+// 根据 period 与选择值算 [start,end] 与文案
+function salaryRange(period, day, month, start, end){
+  if(period==='day'&&day) return {start:parseDay(day),end:parseDayEnd(day),text:day};
+  if(period==='month'&&month) return {start:parseMonthStart(month),end:parseMonthEnd(month),text:monthLabelOf(month)};
+  if(period==='range'){const s=start?parseDay(start):0;const e=end?parseDayEnd(end):Infinity;return {start:s,end:e,text:(start||'开始')+' ~ '+(end||'至今')};}
+  return {start:0,end:Infinity,text:'全部'};
+}
+function inR(ts,r){return ts>=r.start&&ts<=r.end;}
+// 订单报工进度：每个项目的已报/总量/百分比（员工可见）
+function orderReportProgress(orderId){
+  const o=getOrder(orderId);
+  if(!o)return {rows:[],doneQty:0,totalQty:0,percent:0};
+  const rows=(o.steps||[]).map(s=>{
+    const total=Number(s.totalQty)||Number(o.qty)||0;
+    const reported=DB.works.filter(w=>w.orderId===orderId&&w.stepId===s.id).reduce((x,w)=>x+w.qty,0);
+    return {id:s.id,name:s.name,total,reported,remain:Math.max(0,total-reported),percent:total>0?Math.min(100,Math.round(reported/total*100)):0};
+  });
+  const doneQty=rows.reduce((s,r)=>s+r.reported,0);
+  const totalQty=rows.reduce((s,r)=>s+r.total,0);
+  return {rows,doneQty,totalQty,percent:totalQty>0?Math.min(100,Math.round(doneQty/totalQty*100)):0};
+}
+// 工艺提醒：螺丝型号（screwNotes 优先，否则从名称提取）
+function orderCraftNotes(orderId){
+  const o=getOrder(orderId);
+  if(!o)return [];
+  if(o.screwNotes&&o.screwNotes.length)return o.screwNotes;
+  return [];
+}
+// 工艺提醒卡片 HTML
+function craftCard(orderId){
+  const list=orderCraftNotes(orderId);
+  if(!list.length)return '';
+  return `<div class="card craft-card"><div class="card-title">🔔 工艺提醒</div>${list.map(n=>`<div class="craft-row"><span class="craft-model">${n.model||'—'}</span><span class="craft-name">${n.name}</span><span class="craft-qty">× ${Number(n.qty||0).toLocaleString()}</span></div>`).join('')}</div>`;
+}
+function clockText(ts){return new Date(ts).toTimeString().slice(0,5);}
+
+/* =========================================================
+   状态
+   ========================================================= */
+const DB = (function(){
+  /* 本地持久化：有已保存的数据就用，否则用演示数据 */
+  try{
+    const raw=localStorage.getItem('factory_db_v2');
+    if(raw){ const d=JSON.parse(raw); if(d&&d.users&&d.orders) return d; }
+  }catch(e){}
+  return buildDemo();
+})();
+/* ===== API 服务器地址自动发现 =====
+ * 隧道/局域网/本机打开 → 同源就是服务器；GitHub Pages 打开 → 从仓库 api-url.txt 读取当前隧道地址 */
+let API_BASE = location.protocol==='file:' ? 'http://127.0.0.1:8000' : '';
+let __apiProbe = null;
+function probeApi(){
+  if(__apiProbe) return __apiProbe;
+  __apiProbe = (async()=>{
+    if(location.protocol==='file:') return 'http://127.0.0.1:8000';
+    try{
+      const r=await fetch('/api/db',{cache:'no-store'});
+      const j=await r.json();
+      if(j && j.users) return '';
+    }catch(e){}
+    try{
+      /* api.github.com 国内直连稳定且无 CDN 缓存，开机更新即时生效 */
+      const r=await fetch('https://api.github.com/repos/nbxsxsl/factory-app/contents/api-url.txt?cb='+Date.now(),{cache:'no-store'});
+      const j=await r.json();
+      const t=(atob((j.content||'').replace(/\n/g,''))).trim().split(/\s+/)[0];
+      if(/^https:\/\/[a-z0-9\-\.]+\.(trycloudflare\.com|ts\.net)$/.test(t)){
+        API_BASE=t; try{ localStorage.setItem('factory_api_base',t); }catch(e){}
+        return t;
+      }
+    }catch(e){}
+    try{
+      const r=await fetch('https://cdn.jsdelivr.net/gh/nbxsxsl/factory-app@main/api-url.txt?cb='+Date.now(),{cache:'no-store'});
+      const t=(await r.text()).trim().split(/\s+/)[0];
+      if(/^https:\/\/[a-z0-9\-\.]+\.(trycloudflare\.com|ts\.net)$/.test(t)){
+        API_BASE=t; try{ localStorage.setItem('factory_api_base',t); }catch(e){}
+        return t;
+      }
+    }catch(e){}
+    try{
+      const r=await fetch('https://raw.githubusercontent.com/nbxsxsl/factory-app/main/api-url.txt?cb='+Date.now(),{cache:'no-store'});
+      const t=(await r.text()).trim().split(/\s+/)[0];
+      if(/^https:\/\/[a-z0-9\-\.]+\.(trycloudflare\.com|ts\.net)$/.test(t)){
+        API_BASE=t; try{ localStorage.setItem('factory_api_base',t); }catch(e){}
+        return t;
+      }
+    }catch(e){}
+    try{ API_BASE = localStorage.getItem('factory_api_base')||''; }catch(e){}
+    return API_BASE;
+  })();
+  return __apiProbe;
+}
+probeApi();
+
+/* 启动时：必拉服务器并合并（补回本地缺失的项目/用户），服务器更新则整体替换；登录页不打断输入 */
+function fetchT(u,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(u,{cache:'no-store',signal:c.signal}).finally(()=>clearTimeout(t));}
+/* 跨域不可达兑底：Pages 备用入口连不上服务器时，引导/自动跳转到同源正式入口（全功能+实时同步） */
+function crossOriginFallback(base){
+  if(document.getElementById('xo-mask'))return;
+  let left=4;
+  const m=document.createElement('div');m.id='xo-mask';
+  m.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(10,15,25,.94);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif';
+  m.innerHTML=`<div style="max-width:340px"><div style="font-size:40px">📶</div><div style="font-size:18px;font-weight:bold;margin:10px 0">当前为备用入口，无法直连加工厂服务器</div><div style="font-size:13.5px;opacity:.8;line-height:1.6">完整功能与实时数据同步请使用正式入口：</div><div style="font-size:15px;color:#4da3ff;margin:8px 0;word-break:break-all">${base}</div><button onclick="location.replace('${base}')" style="margin-top:14px;padding:12px 22px;border:none;border-radius:10px;background:#2f7df6;color:#fff;font-size:15px;font-weight:bold">立即跳转</button><div style="margin-top:10px;font-size:12px;opacity:.65"><span style="cursor:pointer;text-decoration:underline" onclick="var e=document.getElementById('xo-mask');e&&e.remove()">留在本页（仅离线浏览）</span> · <span id="xo-cd">${left}s 后自动跳转</span></div></div>`;
+  document.body.appendChild(m);
+  const cd=setInterval(()=>{left--;const el=document.getElementById('xo-cd');if(el)el.textContent=left+'s 后自动跳转';if(left<=0){clearInterval(cd);location.replace(base);}},1000);
+}
+(function(){
+  probeApi().then(base=>{
+    const sameOrigin=!base||location.href.indexOf(base)===0;
+    fetchT(base+'/api/db',6000).then(r=>r.json()).then(d=>{
+      if(d && d.users && d.orders){
+        let changed=false;
+        if(!localStorage.getItem('factory_db_v2') || (d.updatedAt||0) > (DB.updatedAt||0) + 5000){
+          Object.keys(DB).forEach(k=>delete DB[k]); Object.assign(DB, d); changed=true;
+        }
+        /* 合并：服务器有而本地缺的项目/用户补回（修复旧缓存缺项目） */
+        const pids=new Set(DB.projects.map(p=>p.id));
+        (d.projects||[]).forEach(p=>{ if(!pids.has(p.id)){ DB.projects.push(p); changed=true; } });
+        const phs=new Set(DB.users.map(u=>u.phone));
+        (d.users||[]).forEach(u=>{ if(!phs.has(u.phone)){ DB.users.push(u); changed=true; } });
+        if(changed){ saveDb(); if(state.user) render(); }
+      }
+    }).catch(()=>{ if(!sameOrigin) crossOriginFallback(base); });
+  });
+})();
+/* 迁移：确保最高权限账号存在（所有设备自动获得，无需清缓存） */
+if(!DB.editRequests)DB.editRequests=[];
+if(!DB.users.some(u=>u.phone==='13251903281')){
+  DB.users.push({id:'su1',name:'谢总',phone:'13251903281',workNo:'S001',role:'superadmin',status:'active',pwd:'xieyun123'});
+}
+function saveDb(){ try{ DB.updatedAt=Date.now(); localStorage.setItem('factory_db_v2', JSON.stringify(DB)); }catch(e){} syncToServer(); }
+/* 同步到本机服务器（管理员电脑）：同源 POST /api/db，服务器自动备份 */
+let __syncTimer=null, __syncStatus='idle';
+function syncToServer(){
+  if(!window.fetch || !DB || !DB.users) return;
+  if(__syncTimer){ clearTimeout(__syncTimer); }
+  __syncTimer=setTimeout(()=>{
+    try{
+      __syncStatus='syncing';
+      probeApi().then(base=>{
+        return fetch(base+'/api/db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(DB),keepalive:true});
+      }).then(r=>{ if(r.status===409){ return pullAndResync().then(()=>{ __syncStatus='ok'; if(state.user) render(); return {__resynced:true}; }); } return r.json(); })
+        .then(j=>{ if(j&&j.__pulled){ __syncStatus='ok'; if(state.user) render(); return; } if(j&&j.__resynced) return; __syncStatus = (j&&j.ok)?'ok':'err'; })
+        .catch(()=>{ __syncStatus='offline'; });
+    }catch(e){ __syncStatus='offline'; }
+  }, 800);
+}
+/* 被服务器判定过期时，拉取服务器最新数据替换本地（旧缓存的改动会被丢弃，以服务器为准） */
+let __lastPull=0;
+function pullServer(force){
+  /* 防闪屏阀：10 秒内不重复拉取重绘（force=true 用于冲突恢复，跳过闸门） */
+  if(!force && Date.now()-__lastPull<10000) return Promise.resolve({__pulled:true});
+  __lastPull=Date.now();
+  return probeApi().then(base=>fetch(base+'/api/db',{cache:'no-store'})).then(r=>r.json()).then(d=>{
+    if(d && d.users && d.orders){
+      Object.keys(DB).forEach(k=>delete DB[k]); Object.assign(DB, d);
+      try{ localStorage.setItem('factory_db_v2', JSON.stringify(DB)); }catch(e){}
+      if(state.user) render();
+      return {__pulled:true};
+    }
+    return {ok:false};
+  });
+}
+/* 冲突恢复：拉取服务器最新 → 按业务一致性把本地未同步的申领/报工/改数合入 → 重试提交一次。
+   解决：员工申领后管理员很久才看到 / 被迫重复申领 */
+function pullAndResync(){
+  return probeApi().then(base=>fetch(base+'/api/db',{cache:'no-store'})).then(r=>r.json()).then(d=>{
+    if(!(d&&d.users&&d.orders)) return {__pulled:false};
+    const ids=k=>new Set((d[k]||[]).map(x=>x.id));
+    const orderIds=ids('orders'), userIds=ids('users');
+    ['claims','works'].forEach(k=>{
+      const have=ids(k);
+      (DB[k]||[]).forEach(x=>{ if(x&&x.id&&!have.has(x.id)&&orderIds.has(x.orderId)&&userIds.has(x.workerId)){ (d[k]=d[k]||[]).push(x); have.add(x.id); } });
+    });
+    const wids=ids('works');
+    const haveE=ids('editRequests');
+    (DB.editRequests||[]).forEach(x=>{ if(x&&x.id&&!haveE.has(x.id)&&wids.has(x.workId)){ (d.editRequests=d.editRequests||[]).push(x); haveE.add(x.id); } });
+    const nids=ids('notices');
+    (DB.notices||[]).forEach(n=>{ if(n&&n.id&&!nids.has(n.id)&&Date.now()-(n.ts||0)<10*60e3){ (d.notices=d.notices||[]).unshift(n); nids.add(n.id); } });
+    Object.keys(DB).forEach(k=>delete DB[k]); Object.assign(DB,d);
+    try{ localStorage.setItem('factory_db_v2', JSON.stringify(DB)); }catch(e){}
+    DB.updatedAt=Date.now();
+    if(state.user) render();
+    return probeApi().then(b2=>fetch(b2+'/api/db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(DB),keepalive:true}));
+  });
+}
+function syncStatus(){ return __syncStatus; }
+/* 兕底轮询：即使 WebSocket 断开，每 8 秒也会拉一次服务器，保证人员增减等变更及时同步 */
+setInterval(()=>{
+  if(!state.user || __syncStatus==='syncing' || Date.now()-__lastPull<6000) return;
+  probeApi().then(base=>{ if(!base) return; return fetch(base+'/api/db',{cache:'no-store'}); })
+    .then(r=>{ if(!r) return null; return r.json(); })
+    .then(d=>{
+      if(d && d.users && d.orders && (d.updatedAt||0) > (DB.updatedAt||0) + 3000){
+        Object.keys(DB).forEach(k=>delete DB[k]); Object.assign(DB, d);
+        try{ localStorage.setItem('factory_db_v2', JSON.stringify(DB)); }catch(e){}
+        if(state.view!=='login') render();
+      }
+    }).catch(()=>{});
+}, 8000);
+/* WebSocket 实时同步：服务器数据变更时主动推送，各设备秒级拉取，不再轮询卡顿 */
+let __ws=null, __wsRetry=0;
+function wsConnect(){
+  if(__ws) return;
+  probeApi().then(base=>{
+    if(!window.WebSocket) return;
+    let url;
+    if(!base){ url=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws'; }
+    else { url=base.replace(/^http/,'ws')+'/ws'; }
+    try{ __ws=new WebSocket(url); }catch(e){ return; }
+    __ws.onopen=()=>{ __wsRetry=0; try{ __ws.send(JSON.stringify({type:'ping'})); }catch(e){} };
+    __ws.onmessage=(ev)=>{
+      try{ const d=JSON.parse(ev.data); if(d.type==='db_updated'){ __syncStatus='ok'; pullServer(true); } }catch(e){}
+    };
+    __ws.onclose=()=>{ __ws=null; if(__wsRetry<6){ __wsRetry++; setTimeout(wsConnect, 2000*__wsRetry); } };
+    __ws.onerror=()=>{ try{ __ws.close(); }catch(e){} };
+  });
+}
+wsConnect();
+const state = {
+  user:null, view:'login', activeTab:'',
+  adminTab:'dashboard', myOrdersTab:'', myClaimsTab:'all',
+  entry:{workNo:'', saleNo:'', productNo:'', productName:'', qty:'', dateStr:'', hasSwitch:null, deliveryDate:'', projectIds:[], screwList:[], detected:false, photo:null, photoLocal:null, workNoAuto:false},
+  showScrewModal:false, screwChoice:{},
+  currentQr:null, inviteRole:'worker',
+  workClaimId:null, entryOrderId:null,
+  /* 员工端：可申领=订单列表，申领订单=点入后的项目页 */
+  myOrdersOrderId:null,
+  /* 加工费维度：按员工支付表 / 全部明细；时间：日/月/区间/全部 */
+  adminSalaryView:'worker', workerSalaryView:'summary',
+  adminSalaryPeriod:'all', workerSalaryPeriod:'all',
+  adminSalaryDay:'', adminSalaryMonth:'', adminSalaryStart:'', adminSalaryEnd:'',
+  workerSalaryDay:'', workerSalaryMonth:'', workerSalaryStart:'', workerSalaryEnd:'',
+  /* 展开的明细 */
+  adminSalaryOpen:{}, workerSalaryOpen:{}
+};
+const $ = id => document.getElementById(id);
+
+/* =========================================================
+   业务逻辑
+   ========================================================= */
+function getOrder(id){return DB.orders.find(o=>o.id===id);}
+
+/* 每个项目的剩余可申领量 = 总数 - (待审批 + 已同意) */
+function orderStepsWithRemain(oid){
+  const o=getOrder(oid); if(!o) return [];
+  const used={};
+  DB.claims.filter(c=>c.orderId===oid&&(c.status==='pending'||c.status==='approved')).forEach(c=>{
+    (c.items||c.itemIds.map(sid=>({stepId:sid,qty:0}))).forEach(it=>{ used[it.stepId]=(used[it.stepId]||0)+(Number(it.qty)||0); });
+  });
+  return o.steps.map(s=>({...s, usedQty:used[s.id]||0, remainQty:Math.max(0,(s.assignedQty||0)-(used[s.id]||0)), claimable:(s.assignedQty||0)>0, reported:DB.works.filter(w=>w.orderId===oid&&w.stepId===s.id).reduce((x,w)=>x+w.qty,0)}));
+}
+function orderProgress(oid){
+  const o=getOrder(oid); if(!o||o.steps.length===0) return 0;
+  const total=o.steps.reduce((s,x)=>s+(x.totalQty||0),0)||1;
+  const used=o.steps.reduce((s,x)=>s+(x.assignedQty||0),0);
+  return Math.min(100,Math.round(used/total*100));
+}
+/* 完工进度：已报工数量 / 工单总量 */
+function orderDoneProgress(oid){
+  const o=getOrder(oid); if(!o) return 0;
+  const total=o.steps.reduce((s,x)=>s+(x.totalQty||0),0)||Number(o.qty)||0;
+  if(!total) return 0;
+  const done=DB.works.filter(w=>w.orderId===oid).reduce((s,w)=>s+(Number(w.qty)||0),0);
+  return Math.min(100,Math.round(done/total*100));
+}
+function dualProgress(oid,label1,label2){
+  const p1=orderProgress(oid), p2=orderDoneProgress(oid);
+  return `<div class="progress-wrap">
+    <div class="row-between"><div class="text-sm text-3">${label1||'领用进度'}</div><div class="text-sm text-3">${p1}%</div></div>
+    <div class="progress-bar" style="margin-top:5px"><div class="progress-fill" style="width:${p1}%"></div></div>
+    <div class="row-between" style="margin-top:6px"><div class="text-sm text-3">${label2||'完工进度'}</div><div class="text-sm text-3" style="color:var(--green)">${p2}%</div></div>
+    <div class="progress-bar" style="margin-top:5px"><div class="progress-fill" style="width:${p2}%;background:linear-gradient(90deg,#34D399,#12B76A)"></div></div>
+  </div>`;
+}
+
+/* 从名称提取型号：如「自攻螺丝 2*5 盐雾环保」→ 2*5 */
+function extractModel(name){
+  const n=String(name||'').replace(/[×xX]/g,'*');
+  const m=n.match(/(\d+(?:\.\d+)?)\s*\*\s*(\d+(?:\.\d+)?)/);
+  return m?m[1]+'*'+m[2]:'';
+}
+/* 螺丝判定：数量 == 成品数量 → 电路板单螺丝；> 成品数量 → 成品螺丝 */
+function analyzeScrews(list, productQty){
+  const pq=Number(productQty)||0;
+  return (list||[]).map(s=>{
+    const q=Number(s.qty)||0;
+    const type = q>pq ? '成品螺丝' : '电路板单螺丝';
+    const model = s.model || extractModel(s.name);
+    return {...s, model, type, rule: q>pq ? `${q} > 成品数量 ${pq} → 数量成倍，判为成品螺丝` : `${q} = 成品数量 ${pq} → 与成品同数量，判为电路板单螺丝`};
+  });
+}
+function setScrewModel(i,val){
+  if(!state.entry.screwList[i])return;
+  state.entry.screwList[i].model=String(val||'').trim();
+  state.entry.screwList[i]._edited=true;
+}
+
+/* OCR 模拟：返回整张单据识别结果 + 子件螺丝清单 */
+/* 拍照：压缩后上传服务器 OCR 识别，自动回填；失败则手动填写 */
+function apiBase(){ return API_BASE || ''; }
+/* 拍照识别优化：EXIF 自动转正 → 限边 2000px → 灰度 + 对比度拉伸（单据文字更清晰）→ JPEG 直传 */
+function compressImage(file, maxPx, cb){
+  const done=(canvas)=>canvas.toBlob(b=>cb(b||file),'image/jpeg',0.9);
+  const enhance=(img, sc)=>{
+    const w=Math.round(img.width*sc), h=Math.round(img.height*sc);
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+    try{
+      const d=ctx.getImageData(0,0,w,h), px=d.data;
+      /* 灰度直方图 5%~95% 分位拉伸，提升小字对比度 */
+      const hist=new Array(256).fill(0); const gray=new Uint8ClampedArray(w*h);
+      for(let i=0;i<px.length;i+=4){ const g=(px[i]*299+px[i+1]*587+px[i+2]*114)/1000; gray[i/4]=g; hist[g|0]++; }
+      const total=w*h; let lo=0,hi=255,acc=0;
+      for(let i=0;i<256;i++){ acc+=hist[i]; if(acc>=total*0.05){ lo=i; break; } }
+      acc=0; for(let i=255;i>=0;i--){ acc+=hist[i]; if(acc>=total*0.05){ hi=i; break; } }
+      if(hi-lo<40){ lo=0; hi=255; }
+      for(let i=0,j=0;i<px.length;i+=4,j++){
+        let v=(gray[j]-lo)*255/(hi-lo); v=v<0?0:v>255?255:v;
+        px[i]=px[i+1]=px[i+2]=v;
+      }
+      ctx.putImageData(d,0,0);
+    }catch(e){}
+    return c;
+  };
+  if(window.createImageBitmap){
+    createImageBitmap(file,{imageOrientation:'from-image'}).then(bmp=>{
+      const sc=Math.min(1,maxPx/Math.max(bmp.width,bmp.height));
+      done(enhance(bmp,sc));
+    }).catch(()=>{ legacy(); });
+  } else legacy();
+  function legacy(){
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{ const sc=Math.min(1,maxPx/Math.max(img.width,img.height)); done(enhance(img,sc)); URL.revokeObjectURL(url); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); cb(file); };
+    img.src=url;
+  }
+}
+function onPhoto(input){
+  const f=input.files&&input.files[0];
+  if(!f)return;
+  state.ocrBusy=true; render();
+  compressImage(f, 2000, (blob)=>{
+    const e=state.entry;
+    const rd=new FileReader();
+    rd.onload=()=>{ e.photoLocal=rd.result; render(); };
+    rd.readAsDataURL(blob);
+    probeApi().then(base=>fetch(base+'/api/ocr',{method:'POST',headers:{'Content-Type':'image/jpeg'},body:blob})).then(r=>r.json()).then(j=>{
+      state.ocrBusy=false;
+      e.detected=true; e.screwList=[];
+      if(j&&j.ok){
+        e.photo=j.photoUrl; e.photoLocal=null;
+        const fl=j.fields||{};
+        if(fl.workNo)e.workNo=fl.workNo;
+        if(fl.saleNo)e.saleNo=fl.saleNo;
+        if(fl.productNo)e.productNo=fl.productNo;
+        if(fl.productName)e.productName=fl.productName;
+        if(fl.qty)e.qty=fl.qty;
+        if(fl.dateStr)e.dateStr=fl.dateStr;
+        if(!e.workNo){ e.workNo=autoWorkNo(); e.workNoAuto=true; }
+        if(!e.dateStr)e.dateStr=new Date().toLocaleDateString('zh-CN');
+        /* 螺丝自动预填：数量=工单数量→电路板单螺丝，否则→成品螺丝 */
+        if(fl.screws&&fl.screws.length){
+          e.screwList=fl.screws.map(s=>({name:s.name, model:s.model, qty:s.qty, type:Number(s.qty)===Number(e.qty)?'电路板单螺丝':'成品螺丝'}));
+          state.screwChoice={};
+          e.screwList.forEach((s,i)=>{ state.screwChoice['k'+i]=s.type; });
+          /* 无开关未定时暂不动项目勾选，用户确认开关后手动/弹窗勾选 */
+        }
+        toast(Object.keys(fl).length>1?'识别完成，请核对信息':'已上传，未识别出字段，请手动填写');
+      } else {
+        if(!e.workNo){ e.workNo=autoWorkNo(); e.workNoAuto=true; }
+        if(!e.dateStr)e.dateStr=new Date().toLocaleDateString('zh-CN');
+        toast('照片已上传，识别暂不可用，请手动填写');
+      }
+      render();
+    }).catch(()=>{
+      state.ocrBusy=false;
+      e.detected=true; e.screwList=[];
+      if(!e.workNo){ e.workNo=autoWorkNo(); e.workNoAuto=true; }
+      if(!e.dateStr)e.dateStr=new Date().toLocaleDateString('zh-CN');
+      toast('网络异常，请手动填写'); render();
+    });
+  });
+}
+function startManual(){
+  const e=state.entry;
+  e.detected=true; e.screwList=[];
+  if(!e.workNo){ e.workNo=autoWorkNo(); e.workNoAuto=true; }
+  if(!e.dateStr)e.dateStr=new Date().toLocaleDateString('zh-CN');
+  render();
+}
+function retake(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+  inp.onchange=()=>onPhoto(inp);
+  inp.click();
+}
+function setEntry(k,v){ state.entry[k]=v; }
+function autoWorkNo(){ return 'W'+new Date().toISOString().slice(2,10).replace(/-/g,'')+String(Date.now()).slice(-4); }
+function runOcr(){ startManual(); }
+function setScrewChoice(i,type){ state.screwChoice['k'+i]=type; render(); }
+function confirmScrewModal(){
+  const chosen=Object.values(state.screwChoice);
+  const set=new Set(state.entry.projectIds);
+  chosen.forEach(n=>{ const p=DB.projects.find(x=>x.name===n); if(p) set.add(p.id); });
+  /* 无开关自动加「插绝缘片」 */
+  if(state.entry.hasSwitch===false){ const p=DB.projects.find(x=>x.name==='插绝缘片'); if(p) set.add(p.id); }
+  state.entry.projectIds=[...set];
+  state.showScrewModal=false;
+  toast('已按螺丝类型勾选项目');
+  render();
+}
+
+/* =========================================================
+   渲染
+   ========================================================= */
+function render(){
+  const s=$('screen'); if(!s) return;
+  const views={login:vLogin,register:vRegister,dashboard:vDashboard,orders:vOrders,orderEntry:vOrderEntry,orderDetail:vOrderDetail,projects:vProjects,notices:vNotices,delivery:vDelivery,approval:vApproval,salary:vSalary,admins:vAdmins,myOrders:vMyOrders,claimOrder:vClaimOrder,myClaims:vMyClaims,work:vWork,mySalary:vMySalary};
+  const fn=views[state.view]||vLogin;
+  s.innerHTML=fn()+tabbar();
+  if(state.showScrewModal) s.innerHTML+=screwModal();
+  if(state.workEditId) s.innerHTML+=workEditModal();
+  if(state.currentQr) s.innerHTML+=qrModal();
+  bindClock();
+  saveDb();
+}
+function bindClock(){const c=$('clock');if(c)c.textContent=new Date().toTimeString().slice(0,5);}
+
+/* ---------- 底部导航 ---------- */
+function adminTabbar(){
+  const t=state.adminTab;
+  return `<div class="tabbar">
+    ${[['dashboard','📊','首页'],['orders','📦','订单'],['approval','✅','审批'],['salary','💰','加工费'],['admins','👥','成员']].map(([k,i,n])=>
+      `<div class="tab-item ${t===k?'on':''}" onclick="state.adminTab='${k}';go('${k}')"><div class="tab-ico">${i}</div>${n}</div>`).join('')}
+  </div>`;
+}
+function workerTabbar(){
+  const t=state.activeTab;
+  return `<div class="tabbar">
+    ${[['myOrders','📋','可申领'],['myClaims','📝','申领状态'],['work','✍️','报工'],['mySalary','💰','我的加工费']].map(([k,i,n])=>
+      `<div class="tab-item ${t===k?'on':''}" onclick="go('${k}')"><div class="tab-ico">${i}</div>${n}</div>`).join('')}
+  </div>`;
+}
+function tabbar(){ return isAdminUser()?adminTabbar():(state.user?workerTabbar():''); }
+/* 管理权限：admin 与 superadmin 都算管理员；superadmin 额外可管理管理员 */
+function isAdminUser(u){ u=u||state.user; return !!u&&(u.role==='admin'||u.role==='superadmin'); }
+function isSuper(){ return state.user&&state.user.role==='superadmin'; }
+
+/* ---------- 登录 ---------- */
+function vLogin(){
+  const saved=(function(){try{return JSON.parse(localStorage.getItem('factory_login')||'null');}catch(e){return null;}})();
+  return `
+  <div class="login-wrap">
+    <div class="login-logo">🏭</div>
+    <div class="login-title">加工厂领料报工系统</div>
+    <div class="login-sub">拍照识别单据 · 分单到人 · 报工计件<br/>管理员与员工协同，一个系统全搞定</div>
+    <div class="login-card">
+      <div class="field"><div class="field-label">手机号</div>
+        <input class="input" id="phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" placeholder="请输入11位手机号" value="${saved?saved.phone:''}"
+          oninput="liveChkLogin()" onkeydown="if(event.key==='Enter'){event.target.blur();login();}">
+        <div class="field-err" id="err_phone"></div>
+      </div>
+      <div class="field"><div class="field-label">密码</div>
+        <input class="input" id="pwd" type="password" autocomplete="current-password" placeholder="请输入密码" value="${saved?saved.pwd:''}"
+          oninput="liveChkLogin()" onkeydown="if(event.key==='Enter'){event.target.blur();login();}">
+        <div class="field-err" id="err_pwd"></div>
+      </div>
+      <label class="remember-row" onclick="event.preventDefault();state.rememberPwd=!state.rememberPwd;var c=this.querySelector('.check');c.classList.toggle('on',state.rememberPwd);c.textContent=state.rememberPwd?'✓':'';">
+        <span class="check ${state.rememberPwd?'on':''}" style="width:20px;height:20px;font-size:14px">${state.rememberPwd?'✓':''}</span>
+        <span class="text-sm text-2">记住密码，下次自动登录</span>
+      </label>
+      <button class="btn-primary" id="btnLogin" onclick="login()">登 录</button>
+      <div class="text-sm text-2" style="text-align:center;margin-top:12px;cursor:pointer" onclick="go('register')">新员工？<b style="color:var(--primary)">使用邀请码注册 →</b></div>
+      ${window.LAN_ORIGIN&&!window.LAN_ORIGIN.includes('_LAN_')?`<div class="text-sm text-3" style="text-align:center;margin-top:8px">同一 WiFi 下 <b style="color:var(--primary);cursor:pointer" onclick="location.href='${window.LAN_ORIGIN}'">局域网直连</b>（更快更稳）</div>`:''}
+      <div class="text-sm text-3" style="text-align:center;margin-top:14px;cursor:pointer;user-select:none" onclick="var d=document.getElementById('demo-entry');d.style.display=d.style.display==='none'?'block':'none'">▾ 调试入口</div>
+      <div id="demo-entry" style="display:none;margin-top:10px">
+        <div class="row" style="gap:10px">
+          <button class="btn-ghost" style="flex:1" onclick="quickLogin('admin')">🛠️ 管理端</button>
+          <button class="btn-ghost" style="flex:1" onclick="quickLogin('worker')">🔧 员工端</button>
+        </div>
+        <div class="text-sm text-3" style="text-align:center;margin-top:10px;cursor:pointer" onclick="if(confirm('⚠️ 将清除本机缓存数据（服务器集中数据不受影响），确定？')){localStorage.removeItem('factory_db_v2');localStorage.removeItem('factory_login');localStorage.removeItem('factory_token');location.reload();}">清本机缓存重载</div>
+      </div>
+    </div>
+  </div>`;
+}
+/* ---------- 登录表单：实时校验 / 防重复提交 / 超时与错误分类 ---------- */
+const RE_PHONE=/^1\d{10}$/;
+function fieldErr(id,msg){ const el=$(id); if(el){ el.classList.toggle('input-err',!!msg); } const tip=$('err_'+id); if(tip){ tip.textContent=msg||''; tip.style.display=msg?'block':'none'; } }
+function chkPhone(v){ v=(v||'').trim(); if(!v)return '请输入手机号'; if(!RE_PHONE.test(v))return '手机号格式不正确'; return ''; }
+function chkPwd(v){ v=(v||''); if(!v)return '请输入密码'; if(v.length<6)return '密码至少6位字符'; return ''; }
+function liveChkLogin(){
+  const p=$('phone'), w=$('pwd');
+  if(!p||!w)return;
+  const pe=chkPhone(p.value), we=chkPwd(w.value);
+  /* 输入中只在“从错改对”时消错，不提前报错（不干扰输入） */
+  if(!pe){ fieldErr('phone',''); }
+  if(!we){ fieldErr('pwd',''); }
+}
+function setBtnLoading(id,on,txt){ const b=$(id); if(!b)return; if(on){ b.disabled=true; b.dataset.t=b.textContent; b.innerHTML='<span class="spin"></span> '+(txt||'请稍候…'); } else { b.disabled=false; if(b.dataset.t)b.textContent=b.dataset.t; } }
+function fetchTimeout(url,opts,ms){ opts=opts||{}; const c=new AbortController(); const t=setTimeout(()=>c.abort(), ms||10000); opts.signal=c.signal; return fetch(url,opts).finally(()=>clearTimeout(t)); }
+function applyLoginResult(j){
+  if(j&&j.db&&j.db.users&&j.db.orders){ Object.keys(DB).forEach(k=>delete DB[k]); Object.assign(DB,j.db); try{ localStorage.setItem('factory_db_v2', JSON.stringify(DB)); }catch(e){} }
+  if(j&&j.token){ try{ localStorage.setItem('factory_token', j.token); }catch(e){} }
+  state.user=(j&&j.user&&DB.users.find(x=>x.phone===(j.user.phone||'')))||j.user;
+}
+let __loginBusy=false;
+function login(){
+  if(__loginBusy) return;                     /* 防重复提交：请求返回前忽略再次点击 */
+  const phone=($('phone')?.value||'').trim(), pwd=($('pwd')?.value||'');
+  const pe=chkPhone(phone), we=chkPwd(pwd);
+  fieldErr('phone',pe); fieldErr('pwd',we);
+  if(pe||we) return;                          /* 提交前硬校验 */
+  __loginBusy=true; setBtnLoading('btnLogin',true,'登录中…');
+  const done=()=>{ __loginBusy=false; setBtnLoading('btnLogin',false); };
+  const saveCred=()=>{ if(state.rememberPwd){ try{ localStorage.setItem('factory_login', JSON.stringify({phone,pwd})); }catch(e){} } else { try{ localStorage.removeItem('factory_login'); }catch(e){} } };
+  /* ① 本地已有该账号：离线也能登录 */
+  const u=DB.users.find(x=>x.phone===phone&&x.pwd===pwd);
+  if(u){ saveCred(); state.user=u; done(); afterLogin(); return; }
+  /* ② 服务器验证兜底（10秒超时；错误码区分原因） */
+  probeApi().then(base=>fetchTimeout(base+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,pwd})}))
+    .then(r=>r.json()).then(j=>{
+      if(j&&j.ok&&j.user){
+        applyLoginResult(j); saveCred();
+        toast('登录成功，欢迎 '+state.user.name);
+        done(); afterLogin(); return;
+      }
+      const msg=(j&&j.message)||'手机号或密码错误';
+      fieldErr('pwd',msg); toast(msg); done();
+    })
+    .catch(e=>{
+      const msg=(e&&e.name==='AbortError')?'网络超时，请检查网络后重试':'网络连接失败，请检查网络后重试';
+      fieldErr('pwd',msg); toast(msg); done();
+    });
+}
+function quickLogin(role){
+  state.user=DB.users.find(x=>x.role===role);
+  afterLogin();
+}
+function afterLogin(){
+  if(isAdminUser(state.user)){
+    state.adminTab='dashboard';state.view='dashboard';
+    /* 超管首次登录：引导先创建管理员和员工 */
+    if(isSuper() && !(DB.settings && DB.settings.superWelcome)){
+      DB.settings=DB.settings||{}; DB.settings.superWelcome=true;
+      state.adminTab='admins'; state.view='admins';
+      setTimeout(()=>toast('👑 欢迎超级管理员！请先创建管理员和员工账号'),500);
+    }
+  }
+  else {state.activeTab='myOrders';state.view='myOrders';}
+  render();
+}
+function logout(){
+  /* 完整退出：销毁服务器端 token + 清空本地凭证 */
+  try{
+    const token=localStorage.getItem('factory_token');
+    if(token){ probeApi().then(base=>fetch(base+'/api/logout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({token})})).catch(()=>{}); }
+  }catch(e){}
+  try{ localStorage.removeItem('factory_token'); localStorage.removeItem('factory_login'); }catch(e){}
+  state.user=null;state.view='login';state.activeTab='';state.rememberPwd=false;render();
+}
+
+/* ---------- 注册（凭邀请码） ---------- */
+function vRegister(){
+  const codes=DB.invites.filter(i=>!i.used&&(i.expireAt||0)>Date.now());
+  return `
+  <div class="login-wrap">
+    <div class="login-logo">📝</div>
+    <div class="login-title">注册账号</div>
+    <div class="login-sub">需要管理员生成的邀请码<br/>向管理员索取后再注册</div>
+    <div class="login-card">
+      <div class="field"><div class="field-label">邀请码</div>
+        <input class="input" id="regCode" maxlength="6" placeholder="如 A3X9K2" value="${__urlInvite||''}" style="text-transform:uppercase;letter-spacing:2px"
+          onkeydown="if(event.key==='Enter'){event.target.blur();register();}"></div>
+      ${codes.length?`<div class="text-sm text-3" style="margin-bottom:8px">可用邀请码：${codes.slice(0,3).map(c=>`<b onclick="document.getElementById('regCode').value='${c.code}'" style="cursor:pointer;text-decoration:underline">${c.code}</b>`).join('、')}（点击填入）</div>`:''}
+      <div class="field"><div class="field-label">姓名</div>
+        <input class="input" id="regName" placeholder="真实姓名" onkeydown="if(event.key==='Enter'){event.target.blur();register();}"><div class="field-err" id="err_regName"></div></div>
+      <div class="field"><div class="field-label">手机号</div>
+        <input class="input" id="regPhone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" placeholder="用于登录，11位手机号" oninput="liveChkReg('regPhone')" onkeydown="if(event.key==='Enter'){event.target.blur();register();}">
+        <div class="field-err" id="err_regPhone"></div></div>
+      <div class="field"><div class="field-label">密码</div>
+        <input class="input" id="regPwd" type="password" autocomplete="new-password" placeholder="至少6位" oninput="liveChkReg('regPwd')" onkeydown="if(event.key==='Enter'){event.target.blur();register();}">
+        <div class="field-err" id="err_regPwd"></div></div>
+      <div class="field"><div class="field-label">确认密码</div>
+        <input class="input" id="regPwd2" type="password" autocomplete="new-password" placeholder="再输一次" oninput="liveChkReg('regPwd2')" onkeydown="if(event.key==='Enter'){event.target.blur();register();}">
+        <div class="field-err" id="err_regPwd2"></div></div>
+      <button class="btn-primary" id="btnReg" onclick="register()">注 册</button>
+      <div class="text-sm text-3" style="text-align:center;margin-top:14px;cursor:pointer" onclick="go('login')">已有账号？返回登录 →</div>
+    </div>
+  </div>`;
+}
+/* ---------- 注册表单：实时校验（输入中从错改对即消错，不提前报错） ---------- */
+function liveChkReg(id){
+  const el=$(id); if(!el)return;
+  const v=el.value||'';
+  let msg='';
+  if(id==='regPhone'&&v&&!RE_PHONE.test(v)) msg='手机号格式不正确';
+  if(id==='regPwd'&&v&&v.length<6) msg='密码至少6位字符';
+  if(id==='regPwd2'&&v&&$('regPwd')&&v!==$('regPwd').value) msg='两次密码不一致';
+  fieldErr(id,msg);
+  if(id==='regPwd'&&$('regPwd2')&&$('regPwd2').value&&$('regPwd2').value===v) fieldErr('regPwd2','');
+}
+let __regBusy=false;
+function register(){
+  if(__regBusy) return;                        /* 防重复提交 */
+  const code=($('regCode')?.value||'').trim().toUpperCase();
+  const name=($('regName')?.value||'').trim();
+  const phone=($('regPhone')?.value||'').trim();
+  const p1=($('regPwd')?.value||''), p2=($('regPwd2')?.value||'');
+  /* 提交前硬校验（错误码 → 友好中文提示，与服务器一致） */
+  const errs={
+    regCode: code?'' : '请输入邀请码',
+    regName: name?'' : '请填写姓名',
+    regPhone: phone?chkPhone(phone) : '请填写手机号',
+    regPwd: p1?chkPwd(p1) : '请设置密码'
+  };
+  errs.regPwd2 = p1!==p2 ? '两次密码不一致' : '';
+  let bad=false;
+  Object.keys(errs).forEach(k=>{ fieldErr(k,errs[k]); if(errs[k])bad=true; });
+  if(bad) return;
+  __regBusy=true; setBtnLoading('btnReg',true,'注册中…');
+  const done=()=>{ __regBusy=false; setBtnLoading('btnReg',false); };
+  /* 服务器端注册：邀请码/手机号唯一性均在服务器校验（互斥锁防并发重复注册） */
+  probeApi().then(base=>fetchTimeout(base+'/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,name,phone,pwd})}))
+    .then(r=>r.json()).then(j=>{
+      if(j&&j.ok&&j.user){
+        applyLoginResult(j);
+        try{ localStorage.setItem('factory_login', JSON.stringify({phone,pwd})); }catch(e){}
+        state.rememberPwd=true;
+        toast('注册成功，欢迎 '+name);
+        done(); afterLogin(); return;
+      }
+      const msg=(j&&j.message)||'注册失败，请稍后重试';
+      /* 把错误定位到对应输入框 */
+      const c=j&&j.code;
+      const map={INVITE_REQUIRED:'regCode',INVITE_INVALID:'regCode',INVITE_USED:'regCode',INVITE_EXPIRED:'regCode',PHONE_EXISTS:'regPhone',BAD_PHONE:'regPhone',WEAK_PWD:'regPwd',NAME_REQUIRED:'regName'};
+      fieldErr(map[c]||'regPwd2',msg); toast(msg); done();
+    })
+    .catch(e=>{
+      /* 服务器不可达：降级为本地注册（局域网/离线可用），同步后自动归一 */
+      const msg=(e&&e.name==='AbortError')?'网络超时，已切换离线注册':'网络异常，已切换离线注册';
+      toast(msg);
+      if(DB.users.some(u=>u.phone===phone)){ fieldErr('regPhone','该手机号已注册，请直接登录'); done(); return; }
+      const inv=DB.invites.find(i=>i.code===code&&!i.used);
+      if(!inv){ fieldErr('regCode','邀请码无效或已被使用'); done(); return; }
+      if((inv.expireAt||0)<Date.now()){ fieldErr('regCode','邀请码已过期'); done(); return; }
+      const role=inv.role==='admin'?'admin':'worker';
+      const nu={id:uid('u_'),name,phone,workNo:(role==='admin'?'A':'W')+String(Date.now()).slice(-5),role,status:'active',pwd:p1};
+      DB.users.push(nu); inv.used=true;
+      DB.notices.unshift({id:uid('n_'),type:'system',title:'新用户注册',text:`${name}（${phone}）已通过邀请码注册为${role==='admin'?'管理员':'员工'}`,ts:Date.now(),read:false});
+      saveDb(); state.user=nu;
+      toast('注册成功，欢迎 '+name);
+      done(); afterLogin();
+    });
+}
+function go(v,tab){
+  state.view=v;
+  if(tab!==undefined)state.activeTab=tab;
+  if(v==='myOrders')state.activeTab='myOrders';
+  if(v==='claimOrder')state.activeTab='myOrders';
+  if(v==='myClaims')state.activeTab='myClaims';
+  if(v==='work')state.activeTab='work';
+  if(v==='mySalary')state.activeTab='mySalary';
+  const sc=$('screen'); if(sc) sc.scrollTop=0;
+  render();
+}
+
+/* ---------- 管理端首页 ---------- */
+function vDashboard(){
+  const me=state.user;
+  const pendingClaims=DB.claims.filter(c=>c.status==='pending');
+  const pendingEdits=(DB.editRequests||[]).filter(r=>r.status==='pending');
+  const workers=DB.users.filter(u=>u.role==='worker');
+  const todayWorks=DB.works.filter(w=>isToday(w.ts));
+  const todayQty=todayWorks.reduce((s,w)=>s+w.qty,0);
+  const todayAmt=todayWorks.reduce((s,w)=>s+w.amount,0);
+  const remind=DB.settings.deliveryRemindDays;
+  const risky=DB.orders.filter(o=>{const d=daysUntil(o.deliveryDate);return d!==null&&d<=remind&&orderDoneProgress(o.id)<100;});
+  const unread=DB.notices.filter(n=>!n.read).length;
+  /* 本周排行 */
+  const week=workers.map(u=>({u,amount:DB.works.filter(w=>w.workerId===u.id&&isThisWeek(w.ts)).reduce((s,w)=>s+w.amount,0)})).sort((a,b)=>b.amount-a.amount);
+  return `
+  <div class="header row-between">
+    <div><div class="header-title">👔 管理端</div><div class="header-sub">你好，${me.name} · ${todayStr()}</div></div>
+    <div class="bell" onclick="go('notices')">🔔${unread>0?`<div class="badge">${unread}</div>`:''}</div>
+  </div>
+  ${risky.length?`<div class="card alert-card">
+    <div class="card-title"><span class="dot-red"></span>交期预警（${risky.length}）</div>
+    ${risky.map(o=>{const d=daysUntil(o.deliveryDate);return `<div class="alert-item"><div class="text-2">${o.workNo} · ${o.productName}</div><div class="tag ${d<0?'tag-overdue':'tag-warn'}">${d<0?`逾期${-d}天`:`剩${d}天`}</div></div>`;}).join('')}
+  </div>`:''}
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" style="color:var(--primary)">${todayQty.toLocaleString()}</div><div class="stat-label">今日产量(件)</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">¥${money(todayAmt)}</div><div class="stat-label">今日加工费</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:${pendingClaims.length?'var(--orange)':'inherit'}">${pendingClaims.length}</div><div class="stat-label">待审批</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:${pendingEdits.length?'var(--red)':'inherit'}">${pendingEdits.length}</div><div class="stat-label">改数审核</div></div>
+  </div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card"><div class="stat-num">${DB.orders.length}</div><div class="stat-label">订单总数</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${workers.length}</div><div class="stat-label">在册员工</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--orange)">${risky.length}</div><div class="stat-label">交期预警</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📈 订单进度</div>
+    ${DB.orders.map(o=>{const p=orderProgress(o.id),dp=orderDoneProgress(o.id);return `<div class="progress-wrap"><div class="row-between"><div class="text-2">${o.workNo} · ${o.productName}</div><div class="text-sm text-3">领用 ${p}% · <span style="color:var(--green)">完工 ${dp}%</span></div></div><div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:${p}%"></div></div><div class="progress-bar" style="margin-top:4px"><div class="progress-fill" style="width:${dp}%;background:linear-gradient(90deg,#34D399,#12B76A)"></div></div></div>`;}).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">🏆 本周员工报工排行</div>
+    ${week.map((r,i)=>`<div class="rank-row"><div class="rank-no ${i===0?'g1':i===1?'g2':i===2?'g3':''}">${i+1}</div><div class="text-2" style="flex:1">${r.u.name}</div><div class="money-sm">¥${money(r.amount)}</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">快捷入口</div>
+    <div class="quick-grid">
+      <div class="quick-item" onclick="go('orderEntry')"><div class="quick-ico">📷</div><div class="quick-txt">拍照录入</div></div>
+      <div class="quick-item" onclick="go('orders')"><div class="quick-ico">📦</div><div class="quick-txt">订单管理</div></div>
+      <div class="quick-item" onclick="go('projects')"><div class="quick-ico">🧩</div><div class="quick-txt">项目管理</div></div>
+      <div class="quick-item" onclick="go('approval')"><div style="position:relative"><div class="quick-ico">✅</div>${pendingClaims.length+pendingEdits.length>0?`<div class="badge">${pendingClaims.length+pendingEdits.length}</div>`:''}</div><div class="quick-txt">审批</div></div>
+      <div class="quick-item" onclick="go('salary')"><div class="quick-ico">💰</div><div class="quick-txt">加工费统计</div></div>
+      <div class="quick-item" onclick="go('delivery')"><div class="quick-ico">⏰</div><div class="quick-txt">交期提醒</div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- 订单列表 ---------- */
+function vOrders(){
+  const kw=(state.orderKw||'').trim().toLowerCase();
+  const fl=state.orderFilter||'all';
+  const doneOf=o=>orderDoneProgress(o.id)>=100;
+  let list=DB.orders.filter(o=>!kw||(o.workNo+o.productName+o.productNo).toLowerCase().includes(kw));
+  if(fl==='active')list=list.filter(o=>!doneOf(o));
+  if(fl==='done')list=list.filter(doneOf);
+  if(fl==='overdue')list=list.filter(o=>{const d=daysUntil(o.deliveryDate);return d!==null&&d<0&&!doneOf(o);});
+  const cnt={all:DB.orders.length,active:DB.orders.filter(o=>!doneOf(o)).length,done:DB.orders.filter(doneOf).length,overdue:DB.orders.filter(o=>{const d=daysUntil(o.deliveryDate);return d!==null&&d<0&&!doneOf(o);}).length};
+  const tabs=[['all','全部'],['active','生产中'],['done','已完成'],['overdue','已逾期']];
+  return `
+  <div class="header"><div class="header-title">📦 订单管理</div><div class="header-sub">共 ${DB.orders.length} 张工单 · ${cnt.done} 张已完工</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="card" style="padding:11px"><input class="input" placeholder="搜索工单号 / 成品名称" value="${state.orderKw||''}" oninput="state.orderKw=this.value;render()"></div>
+    <div class="tabs" style="padding:0 16px 4px">${tabs.map(([k,t])=>`<div class="tab ${fl===k?'on':''}" onclick="state.orderFilter='${k}';render()">${t} ${cnt[k]>0?`<span class="text-sm text-3">${cnt[k]}</span>`:''}</div>`).join('')}</div>
+    ${list.length===0?'<div class="empty"><span class="empty-emoji">📭</span>暂无订单</div>':list.map(o=>{const done=doneOf(o);const d=daysUntil(o.deliveryDate);return `
+    <div class="card order-card" onclick="openOrder('${o.id}')">
+      <div class="row-between"><div class="bold">${o.workNo}</div><div class="tag ${done?'tag-approved':(d!==null&&d<0?'tag-overdue':'tag-processing')}">${done?'✓ 已完工':(d!==null&&d<0?`逾期${-d}天`:(o.hasSwitch?'有开关':'无开关'))}</div></div>
+      <div class="text-sm text-3" style="margin-top:5px">${o.productName}</div>
+      <div class="text-sm text-3" style="margin-top:3px">成品编号 ${o.productNo} · 数量 ${Number(o.qty).toLocaleString()}${o.deliveryDate?` · 交期 ${o.deliveryDate}`:''}</div>
+      ${dualProgress(o.id,'领用进度','完工进度')}
+    </div>`;}).join('')}
+  </div>
+  <button class="btn-primary" style="position:absolute;bottom:84px;right:22px;width:58px;height:58px;border-radius:20px;padding:0;font-size:26px;line-height:58px" onclick="go('orderEntry')">📷</button>`;
+}
+function openOrder(id){state.entryOrderId=id;go('orderDetail');}
+
+/* ---------- 拍照录入 ---------- */
+function vOrderEntry(){
+  const e=state.entry;
+  const selNames=e.projectIds.map(pid=>DB.projects.find(p=>p.id===pid)?.name).filter(Boolean);
+  return `
+  <div class="header"><div class="header-title">📷 订单录入</div><div class="header-sub">拍摄委外领料申请单，核对后保存生成分配</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="card ${e.detected?'ocr-card':''}">
+      ${!e.detected?`<div class="cam-box"><div class="cam-ico">📄</div>
+        ${state.ocrBusy?'<div class="text-2" style="margin:8px 0">⏳ 正在上传识别，请稍候…</div>':`<div class="text-2" style="margin:8px 0 14px">拍摄单据，自动识别并填入订单</div>
+        <label class="btn-primary" style="display:inline-block;padding:12px 26px">📷 拍照
+          <input type="file" accept="image/*" capture="environment" style="display:none" onchange="onPhoto(this)" ${state.ocrBusy?'disabled':''}>
+        </label>
+        <div class="text-sm text-3" style="margin-top:12px;cursor:pointer" onclick="startManual()">跳过拍照，直接填写 →</div>`}</div>`:`
+      ${state.ocrBusy?'<div class="text-2" style="text-align:center;padding:6px">⏳ 服务器识别中…</div>':(e.photo||e.photoLocal)?`<img src="${e.photo||e.photoLocal}" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;margin-bottom:10px;background:#fff">`:''}
+      <div class="card-title"><span class="dot-green"></span>单据信息（请核对填写）</div>
+      <div class="field"><div class="field-label">单号 ${e.workNoAuto?'（自动生成，可改）':''}</div><input class="input" value="${e.workNo}" onchange="setEntry('workNo',this.value)"></div>
+      <div class="field"><div class="field-label">订单号</div><input class="input" value="${e.saleNo||''}" onchange="setEntry('saleNo',this.value)"></div>
+      <div class="field"><div class="field-label">委外料号</div><input class="input" value="${e.productNo||''}" onchange="setEntry('productNo',this.value)"></div>
+      <div class="field"><div class="field-label">委外料品 *</div><input class="input" value="${e.productName||''}" placeholder="必填，如 1#汽泡棒 不锈钢款 组装半成品" onchange="setEntry('productName',this.value)"></div>
+      <div class="field"><div class="field-label">工单数量（件）*</div><input class="input" type="number" inputmode="numeric" value="${e.qty||''}" placeholder="必填" onchange="setEntry('qty',this.value)"></div>
+      <div class="field"><div class="field-label">发料日期</div><input class="input" type="date" value="${(e.dateStr||'').replace(/\//g,'-')}" onchange="setEntry('dateStr',this.value)"></div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="retake()">🔄 重拍 / 换照片</button>`}
+    </div>
+
+    ${e.detected&&e.screwList&&e.screwList.length?`
+    <div class="card screw-card">
+      <div class="card-title">🔩 螺丝分析</div>
+      <div class="text-sm text-3" style="margin-bottom:8px">规则：螺丝数量 = 成品数量 → 电路板单螺丝；螺丝数量 &gt; 成品数量 → 成品螺丝</div>
+      ${e.screwList.map((s,i)=>`
+      <div class="screw-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="flex:1;min-width:0"><div class="bold text-2">${s.name}</div><div class="text-sm text-3">数量 ${Number(s.qty).toLocaleString()} · ${s.rule}</div></div>
+          <div class="pick ${(state.screwChoice['k'+i]||s.type)==='电路板单螺丝'?'on':(state.screwChoice['k'+i]||s.type)==='成品螺丝'?'':'on'}">${state.screwChoice['k'+i]||s.type}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="text-sm text-3" style="white-space:nowrap">型号</span>
+          <input class="screw-model-input" value="${s.model||''}" placeholder="如 2*5" oninput="setScrewModel(${i},this.value)" onchange="setScrewModel(${i},this.value);render()">
+        </div>
+      </div>`).join('')}
+      <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="openScrewModal()">重新选择螺丝类型</button>
+    </div>`:''}
+
+    ${e.detected?`
+    <div class="card">
+      <div class="card-title">开关判定（人工确认）</div>
+      <div class="switch-row">
+        <div class="switch-btn ${e.hasSwitch===true?'on':''}" onclick="setSwitch(true)">✅ 有开关</div>
+        <div class="switch-btn ${e.hasSwitch===false?'on':''}" onclick="setSwitch(false)">❌ 无开关</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">加工项目（多选）</div>
+      <div class="text-sm text-3" style="margin-bottom:8px">每个项目数量自动 = 成品数量 ${e.qty?Number(e.qty).toLocaleString():'—'}，不可修改</div>
+      ${DB.projects.map(p=>`
+      <div class="chip-row ${e.projectIds.includes(p.id)?'on':''}" onclick="toggleProject('${p.id}')">
+        <div><div class="chip-name">${p.name}</div><div class="chip-price">数量 ${e.qty||0} 件 ${p.price?`· 单价 ¥${p.price}`:''}</div></div>
+        <div class="chip-check">${e.projectIds.includes(p.id)?'✓':''}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">交期</div>
+      <input class="input" type="date" value="${(e.deliveryDate||'').replace(/\//g,'-')}" onchange="state.entry.deliveryDate=this.value.replace(/-/g,'/');render()">
+    </div>
+
+    <div class="card">
+      <div class="card-title">生成预览</div>
+      <div class="text-sm text-3">工单 ${e.workNo} · ${e.hasSwitch===null?'未选择开关':(e.hasSwitch?'有开关':'无开关')}</div>
+      <div class="text-sm text-3" style="margin-top:6px">将生成项目：${selNames.length?selNames.join('、'):'（未选择）'}</div>
+      <div class="text-sm text-3" style="margin-top:6px">生成后进入待申领池，员工自行申领</div>
+      <button class="btn-primary" style="margin-top:14px" onclick="saveOrder()">保存并生成分配</button>
+    </div>`:''}
+  </div>`;
+}
+function setSwitch(v){
+  const e=state.entry; e.hasSwitch=v;
+  const insul=DB.projects.find(p=>p.name==='插绝缘片');
+  const set=new Set(e.projectIds);
+  if(v===false){ if(insul) set.add(insul.id); }
+  else { if(insul) set.delete(insul.id); }
+  e.projectIds=[...set];
+  toast(v?'已标记：有开关':'已标记：无开关（自动添加插绝缘片）');
+  render();
+}
+function toggleProject(pid){
+  const e=state.entry, i=e.projectIds.indexOf(pid);
+  if(i>=0)e.projectIds.splice(i,1); else e.projectIds.push(pid);
+  render();
+}
+function saveOrder(){
+  const e=state.entry;
+  if(!e.detected){toast('请先拍照或点「直接填写」');return;}
+  if(!(e.productName||'').trim()){toast('请填写成品名称');return;}
+  if(!(Number(e.qty)>0)){toast('请填写成品数量');return;}
+  if(e.hasSwitch===null){toast('请先判定「有开关 / 无开关」');return;}
+  if(e.projectIds.length===0){toast('请至少选择一个加工项目');return;}
+  if(!(e.workNo||'').trim()){e.workNo=autoWorkNo();}
+  const qty=Number(e.qty)||0;
+  const steps=e.projectIds.map((pid,i)=>{
+    const p=DB.projects.find(x=>x.id===pid)||{name:pid,price:0};
+    return {id:'s_'+e.workNo+'_'+i, name:p.name, price:p.price, totalQty:qty, assignedQty:0};
+  });
+  /* 螺丝型号 → 工艺提醒（员工端可见） */
+  const screwNotes=(e.screwList||[]).filter(s=>s.name).map(s=>({name:s.name, model:s.model||'', qty:s.qty||qty}));
+  const o={id:'o_'+e.workNo, workNo:e.workNo, saleNo:e.saleNo, productNo:e.productNo, productName:e.productName, qty, dateStr:e.dateStr, hasSwitch:e.hasSwitch, deliveryDate:e.deliveryDate, steps, screwNotes, photo:(e.photo&&String(e.photo).indexOf('/photos/')===0)?e.photo:'', allocated:false, createdBy:(state.user||{}).name||'', createdAt:Date.now()};
+  const ex=DB.orders.findIndex(x=>x.workNo===e.workNo);
+  if(ex>=0)DB.orders[ex]=o; else DB.orders.unshift(o);
+  DB.notices.unshift({id:uid('n_'),type:'system',title:'新工单已录入',text:`${o.workNo}（${o.productName}）已录入，等待分单`,ts:Date.now(),read:false});
+  state.entry={workNo:'',saleNo:'',productNo:'',productName:'',qty:'',dateStr:'',hasSwitch:null,deliveryDate:'',projectIds:[],screwList:[],photo:null,photoLocal:null,detected:false,workNoAuto:false};
+  toast('已保存，进入待申领池');
+  state.entryOrderId=o.id; go('orderDetail');
+}
+
+/* ---------- 订单详情（定价 + 生成分配） ---------- */
+/* 删除订单（管理员）：同时清理相关申领/报工数据 */
+function delOrder(oid){
+  const o=getOrder(oid);
+  if(!o)return;
+  if(!confirm('确定删除订单 '+o.workNo+'（'+o.productName+'）？\n相关的申领和报工记录也会一并删除，不可恢复！'))return;
+  DB.orders=DB.orders.filter(x=>x.id!==oid);
+  DB.claims=DB.claims.filter(c=>c.orderId!==oid);
+  DB.records=(DB.records||[]).filter(r=>r.orderId!==oid);
+  DB.works=DB.works.filter(w=>w.orderId!==oid);
+  toast('订单已删除');
+  state.view='orders'; render();
+}
+function vOrderDetail(){
+  const o=getOrder(state.entryOrderId);
+  if(!o)return '<div class="empty"><span class="empty-emoji">❓</span>订单不存在</div>';
+  const rows=orderStepsWithRemain(o.id);
+  const d=daysUntil(o.deliveryDate);
+  return `
+  <div class="header row-between">
+    <div><div class="header-title">${o.workNo}</div><div class="header-sub">${o.productName}</div></div>
+    <div class="tag ${o.hasSwitch?'tag-processing':'tag-done'}">${o.hasSwitch?'有开关':'无开关'}</div>
+  </div>
+  <div class="page" style="padding-top:0">
+    ${o.photo?`<img src="${o.photo}" style="width:100%;max-height:260px;object-fit:contain;border-radius:14px;background:#fff;margin-bottom:10px;box-shadow:0 4px 16px rgba(30,34,60,.08)">`:''}
+    ${isAdminUser()?`<button class="btn-mini-red" style="margin:0 16px 10px;padding:10px 16px" onclick="delOrder('${o.id}')">🗑 删除此订单</button>`:''}
+    <div class="card">
+      <div class="kv"><span class="k">订单号</span><span class="v">${o.saleNo||'—'}</span></div>
+      <div class="kv"><span class="k">委外料号</span><span class="v">${o.productNo||'—'}</span></div>
+      <div class="kv"><span class="k">工单数量</span><span class="v">${Number(o.qty).toLocaleString()} 件</span></div>
+      <div class="kv"><span class="k">发料日期</span><span class="v">${o.dateStr||'—'}</span></div>
+      <div class="kv"><span class="k">交期</span><span class="v">${o.deliveryDate||'—'} ${d!==null?`<span class="tag ${d<0?'tag-overdue':d<=3?'tag-warn':'tag-done'}" style="margin-left:6px">${d<0?`逾期${-d}天`:`剩${d}天`}</span>`:''}</span></div>
+    </div>
+    <div class="card">${dualProgress(o.id,'领用进度','完工进度')}</div>
+    <div class="card">
+      <div class="card-title">项目定价与分配</div>
+      <div class="text-sm text-3" style="margin-bottom:10px">单价可随时补录/修改（改动后相关报工金额自动更新），未定价也可直接分配</div>
+      ${rows.map(s=>`
+      <div class="step-item">
+        <div class="row-between">
+          <div><div class="bold step-name">${s.name}</div><div class="text-sm text-3">总数 ${s.totalQty} · 已分配 ${s.assignedQty} · 剩余 ${s.remainQty}</div></div>
+          <div class="row" style="gap:6px">
+            <span class="text-sm text-3">¥</span><input class="input" style="width:76px;padding:8px 10px;font-size:13.5px" type="number" value="${s.price||''}" placeholder="单价" onchange="setStepPrice('${o.id}','${s.id}',this.value)">
+          </div>
+        </div>
+        ${s.assignedQty>0?`<div class="progress-wrap"><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${Math.round(s.usedQty/s.assignedQty*100)}%"></div></div><div class="text-sm text-3" style="margin-top:4px">已申领 ${s.usedQty} / ${s.assignedQty}</div></div>`:''}
+      </div>`).join('')}
+      <button class="btn-primary" style="margin-top:12px" onclick="genAlloc('${o.id}')">🚀 生成分配（全部投入待申领池）</button>
+    </div>
+    <div class="card">
+      <div class="card-title">本单申领记录</div>
+      ${(()=>{const cl=DB.claims.filter(c=>c.orderId===o.id);return cl.length===0?'<div class="text-sm text-3">暂无申领</div>':cl.map(c=>{const u=DB.users.find(x=>x.id===c.workerId)||{};const m={pending:['待审批','tag-pending'],approved:['已同意','tag-approved'],rejected:['已驳回','tag-rejected']}[c.status];return `<div class="row-between detail-row"><div><div class="text-2">${u.name} · ${(c.items||[]).map(it=>(o.steps.find(s=>s.id===it.stepId)||{}).name+'×'+it.qty).join('、')}</div><div class="text-sm text-3">${c.time||''}</div></div><div class="tag ${m[1]}">${m[0]}</div></div>`;}).join('');})()}
+    </div>
+  </div>`;
+}
+function setStepPrice(oid,sid,v){const o=getOrder(oid);const s=o.steps.find(x=>x.id===sid);if(s){s.price=Number(v)||0;let n=0;DB.works.forEach(w=>{if(w.orderId===oid&&w.stepId===sid){w.price=s.price;w.amount=Number((w.qty*s.price).toFixed(2));n++;}});saveDb();toast(n?('单价已保存，'+n+'笔报工金额已更新'):'单价已保存');render();}}
+function genAlloc(oid){
+  const o=getOrder(oid);
+  const noPrice=o.steps.filter(s=>!s.price);
+  o.steps.forEach(s=>{s.assignedQty=s.totalQty;});
+  o.allocated=true;
+  DB.notices.unshift({id:uid('n_'),type:'claim',title:'分单完成',text:`${o.workNo} 已生成分配${noPrice.length?('（'+noPrice.map(s=>s.name).join('、')+'暂未定价，可随时补录）'):''}，员工可开始申领`,ts:Date.now(),read:false});
+  toast(noPrice.length?'已生成分配（未定价项目也已投入申领池）':'已生成分配，员工可申领');
+  render();
+}
+
+/* ---------- 项目管理 ---------- */
+function vProjects(){
+  return `
+  <div class="header"><div class="header-title">🧩 项目管理</div><div class="header-sub">订单录入时可多选的项目库（共 ${DB.projects.length} 个）</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="card">
+      <div class="card-title">新增项目</div>
+      <div class="row" style="gap:8px">
+        <input class="input" id="pn" placeholder="项目名称，如：贴标签" style="flex:1">
+        <button class="btn-mini" onclick="addProject()">添加</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">项目列表</div>
+      ${DB.projects.map(p=>`
+      <div class="row-between detail-row">
+        <div><div class="bold text-2">${p.name}</div>${p.builtin?'<div class="text-sm text-3">系统内置</div>':''}</div>
+        ${p.builtin?'<span class="tag tag-done">内置</span>':`<button class="btn-mini-red" onclick="delProject('${p.id}')">删除</button>`}
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+function addProject(){
+  const n=($('pn')?.value||'').trim();
+  if(!n){toast('请输入项目名称');return;}
+  if(DB.projects.some(p=>p.name===n)){toast('项目已存在');return;}
+  DB.projects.push({id:uid('p_'),name:n,price:0,builtin:false});
+  toast('项目已添加');render();
+}
+function delProject(id){DB.projects=DB.projects.filter(p=>p.id!==id);toast('已删除');render();}
+
+/* ---------- 消息中心 ---------- */
+function vNotices(){
+  const typ={delivery:['⏰','tag-warn'],claim:['📨','tag-processing'],system:['📢','tag-done']};
+  return `
+  <div class="header"><div class="header-title">🔔 消息中心</div><div class="header-sub">交期提醒 · 申领进度 · 系统通知</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="card" style="padding:11px">
+      <div class="row-between"><div class="text-2">未读消息 ${DB.notices.filter(n=>!n.read).length} 条</div><button class="btn-mini" onclick="markAllRead()">全部已读</button></div>
+    </div>
+    ${DB.notices.length===0?'<div class="empty"><span class="empty-emoji">🔕</span>暂无消息</div>':DB.notices.map(n=>`
+    <div class="card" style="${n.read?'opacity:.62':''}">
+      <div class="row-between"><div class="bold text-2">${typ[n.type]?typ[n.type][0]:'📢'} ${n.title}</div><div class="tag ${typ[n.type]?typ[n.type][1]:'tag-done'}">${n.read?'已读':'新'}</div></div>
+      <div class="text-sm text-3" style="margin-top:6px;line-height:1.6">${n.text}</div>
+      <div class="text-sm text-3" style="margin-top:6px">${new Date(n.ts).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`).join('')}
+  </div>`;
+}
+function markAllRead(){DB.notices.forEach(n=>n.read=true);toast('已全部标记为已读');render();}
+
+/* ---------- 交期提醒 ---------- */
+function vDelivery(){
+  const r=DB.settings.deliveryRemindDays;
+  const list=DB.orders.map(o=>({...o,d:daysUntil(o.deliveryDate)})).sort((a,b)=>(a.d??999)-(b.d??999));
+  return `
+  <div class="header"><div class="header-title">⏰ 交期提醒</div><div class="header-sub">默认提前 ${r} 天预警，可调整阈值</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="card">
+      <div class="card-title">提醒阈值</div>
+      <div class="row" style="gap:10px">
+        ${[1,2,3,5,7].map(n=>`<div class="seg-item ${r===n?'on':''}" style="flex:1;padding:9px;border-radius:11px;background:${r===n?'#fff':'#F1F2F7'};text-align:center;font-weight:700;font-size:13px;cursor:pointer" onclick="setRemind(${n})">${n}天</div>`).join('')}
+      </div>
+    </div>
+    ${list.map(o=>{const d=o.d;const cls=d===null?'':d<0?'tag-overdue':d<=r?'tag-warn':'tag-done';const txt=d===null?'未设交期':d<0?`逾期 ${-d} 天`:d===0?'今天到期':`剩 ${d} 天`;return `
+    <div class="card"><div class="row-between"><div><div class="bold">${o.workNo}</div><div class="text-sm text-3" style="margin-top:4px">${o.productName} · 交期 ${o.deliveryDate||'—'}</div></div><div class="tag ${cls}">${txt}</div></div></div>`;}).join('')}
+  </div>`;
+}
+function setRemind(n){DB.settings.deliveryRemindDays=n;toast('阈值已设为 '+n+' 天');render();}
+
+/* ---------- 申领审批 ---------- */
+function vApproval(){
+  const tab=state.approvalTab||'pending';
+  const map={pending:['待审批','tag-pending'],approved:['已同意','tag-approved'],rejected:['已驳回','tag-rejected']};
+  let list=DB.claims.map(c=>{const o=getOrder(c.orderId)||{};const u=DB.users.find(x=>x.id===c.workerId)||{};
+    const items=(c.items||[]).map(it=>{const s=(o.steps||[]).find(x=>x.id===it.stepId)||{};return{name:s.name||it.stepId,qty:it.qty||0,price:s.price||0};});
+    return {...c,workNo:o.workNo||'—',productName:o.productName||'',workerName:u.name||'—',items};}).sort((a,b)=>(b.time||'').localeCompare(a.time||''));
+  if(tab!=='all')list=list.filter(c=>c.status===tab);
+  const tabs=[['pending','待审批'],['approved','已同意'],['rejected','已驳回'],['all','全部']];
+  return `
+  <div class="header"><div class="header-title">✅ 申领审批</div><div class="header-sub">员工申领后在此处理</div></div>
+  <div class="tabs" style="padding-left:16px">${tabs.map(([k,t])=>`<div class="tab ${tab===k?'on':''}" onclick="state.approvalTab='${k}';render()">${t}</div>`).join('')}</div>
+  <div class="page" style="padding-top:0">
+    ${(()=>{const pend=(DB.editRequests||[]).filter(r=>r.status==='pending'); if(!pend.length)return '';
+      return `<div class="card"><div class="card-title">✏️ 报工数量修改申请（${pend.length}）</div>${pend.map(r=>{const w=DB.works.find(x=>x.id===r.workId)||{};const o=getOrder(r.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===r.stepId)||{};const u=DB.users.find(x=>x.id===r.workerId)||{};return `<div class="detail-row row-between" style="align-items:flex-start"><div><div class="text-2 bold">${u.name||'—'} · ${s.name||''} · ${o.workNo||''}</div><div class="text-sm text-3" style="margin:3px 0">${r.oldQty} 件 → 改为 <b style="color:var(--primary)">${r.newQty} 件</b></div><div class="text-sm text-3">提交时间 ${r.time||''}</div></div><div class="row" style="gap:8px"><button class="btn-mini-green" onclick="approveWorkEdit('${r.id}')">同意</button><button class="btn-mini-red" style="background:#FEE4E2;color:#D92D20" onclick="rejectWorkEdit('${r.id}')">驳回</button></div></div>`;}).join('')}</div>`;})()}
+    ${list.length===0?'<div class="empty"><span class="empty-emoji">🎉</span>暂无记录</div>':list.map(c=>`
+    <div class="card">
+      <div class="row-between"><div class="bold">${c.workerName}</div><div class="tag ${map[c.status][1]}">${map[c.status][0]}</div></div>
+      <div class="text-sm text-3" style="margin-top:4px">${c.workNo} · ${c.productName}</div>
+      <div class="divider"></div>
+      ${c.items.map(it=>`<div class="row-between" style="margin-top:4px"><div class="text-2">${it.name}</div><div class="text-sm"><span class="text-3">×${it.qty} </span><span class="money-sm">¥${it.price}</span></div></div>`).join('')}
+      <div class="text-sm text-3" style="margin-top:8px">提交时间 ${c.time||''}</div>
+      ${c.reason?`<div class="text-sm" style="color:var(--red);margin-top:6px">驳回原因：${c.reason}</div>`:''}
+      ${c.status==='pending'?`<div class="row" style="gap:10px;margin-top:14px"><button class="btn-mini-green" style="flex:1;padding:11px" onclick="approveClaim('${c.id}')">同意</button><button class="btn-mini-red" style="flex:1;padding:11px;background:#FEE4E2;color:#D92D20" onclick="rejectClaim('${c.id}')">驳回</button></div>`:''}
+    </div>`).join('')}
+  </div>`;
+}
+function approveClaim(cid){
+  const c=DB.claims.find(x=>x.id===cid); if(!c)return;
+  c.status='approved';
+  const o=getOrder(c.orderId); const u=DB.users.find(x=>x.id===c.workerId)||{};
+  DB.notices.unshift({id:uid('n_'),type:'claim',title:'申领已通过',text:`${u.name} 在 ${o.workNo} 的申领已同意`,ts:Date.now(),read:false});
+  toast('已同意');render();
+}
+function rejectClaim(cid){
+  const c=DB.claims.find(x=>x.id===cid); if(!c)return;
+  c.status='rejected'; c.reason='管理员驳回';
+  toast('已驳回');render();
+}
+
+/* ---------- 加工费统计（管理端） ---------- */
+/* 按日期分组 */
+function groupByDay(works){
+  const map=new Map();
+  works.forEach(w=>{const k=dayKey(w.ts);if(!map.has(k))map.set(k,[]);map.get(k).push(w);});
+  return [...map.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([k,list])=>({key:k,label:dayLabel(list[0].ts),list:list.slice().sort((a,b)=>b.ts-a.ts),amount:list.reduce((s,w)=>s+w.amount,0),qty:list.reduce((s,w)=>s+w.qty,0)}));
+}
+/* 按员工汇总成支付表行 */
+function summarizeByWorker(works){
+  const map=new Map();
+  works.forEach(w=>{const k=w.workerId;if(!map.has(k))map.set(k,[]);map.get(k).push(w);});
+  return [...map.entries()].map(([uidv,list])=>{
+    const u=DB.users.find(x=>x.id===uidv)||{};
+    const imap=new Map();
+    list.forEach(w=>{const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};const nm=s.name||w.stepId;if(!imap.has(nm))imap.set(nm,{name:nm,qty:0,amount:0,price:w.price||0});const it=imap.get(nm);it.qty+=w.qty;it.amount+=w.amount;});
+    return {id:uidv,name:u.name||'未知',workNo:u.workNo||'',count:list.length,qty:list.reduce((s,w)=>s+w.qty,0),amount:list.reduce((s,w)=>s+w.amount,0),items:[...imap.values()]};
+  }).sort((a,b)=>b.amount-a.amount);
+}
+function salaryRangeBar(prefix){
+  const st=state;
+  const period=st[prefix+'Period'];const day=st[prefix+'Day'];const month=st[prefix+'Month'];const s=st[prefix+'Start'];const e=st[prefix+'End'];
+  const set=(k,v)=>{st[prefix+k]=v;render();};
+  return `
+  <div class="seg">
+    <div class="seg-item ${period==='day'?'on':''}" onclick="state.${prefix}Period='day';render()">按日</div>
+    <div class="seg-item ${period==='month'?'on':''}" onclick="state.${prefix}Period='month';render()">按月</div>
+    <div class="seg-item ${period==='range'?'on':''}" onclick="state.${prefix}Period='range';render()">区间</div>
+    <div class="seg-item ${period==='all'?'on':''}" onclick="state.${prefix}Period='all';render()">全部</div>
+  </div>
+  ${period==='day'?`<div class="pick-bar"><label class="pick-item active">📅 <input type="date" value="${day||ymd(new Date())}" onchange="state.${prefix}Day=this.value;state.${prefix}Period='day';render()"></label></div>`:''}
+  ${period==='month'?`<div class="pick-bar"><label class="pick-item active">🗓 <input type="month" value="${month||ym(new Date())}" onchange="state.${prefix}Month=this.value;state.${prefix}Period='month';render()"></label></div>`:''}
+  ${period==='range'?`<div class="pick-bar"><label class="pick-item ${s?'active':''}"><input type="date" value="${s||''}" onchange="state.${prefix}Start=this.value;state.${prefix}Period='range';render()"></label><span class="text-3">~</span><label class="pick-item ${e?'active':''}"><input type="date" value="${e||''}" onchange="state.${prefix}End=this.value;state.${prefix}Period='range';render()"></label></div>`:''}`;
+}
+/* 按订单结算：订单 → 每个加工人员各自的项目/数量/金额（发钱用）+ 超量校验 */
+function buildOrderSettlement(works){
+  const map=new Map();
+  works.forEach(w=>{const k=w.orderId;if(!map.has(k))map.set(k,[]);map.get(k).push(w);});
+  return [...map.entries()].map(([oid,list])=>{
+    const o=getOrder(oid)||{steps:[],qty:0};
+    const steps=(o.steps||[]).map(s=>{
+      const ws=list.filter(w=>w.stepId===s.id);
+      const done=ws.reduce((s2,w)=>s2+w.qty,0);
+      const amount=ws.reduce((s2,w)=>s2+w.amount,0);
+      const total=Number(s.totalQty)||Number(o.qty)||0;
+      return {id:s.id,name:s.name,price:Number(s.price)||0,total,done,remain:total-done,amount,over:done>total};
+    });
+    // 按加工人员汇总
+    const wmap=new Map();
+    list.forEach(w=>{
+      const wid=w.workerId||'unknown';
+      if(!wmap.has(wid))wmap.set(wid,new Map());
+      const m2=wmap.get(wid);
+      const st=steps.find(x=>x.id===w.stepId)||{name:w.stepId,price:w.price||0};
+      if(!m2.has(w.stepId))m2.set(w.stepId,{name:st.name,price:Number(w.price)||0,qty:0,amount:0});
+      const it=m2.get(w.stepId);it.qty+=w.qty;it.amount+=w.amount;
+    });
+    const workers=[...wmap.entries()].map(([wid,m2])=>{
+      const u=DB.users.find(x=>x.id===wid)||{};
+      const items=[...m2.values()];
+      return {id:wid,name:u.name||'未知',workNo:u.workNo||'',count:list.filter(w=>w.workerId===wid).length,qty:items.reduce((s,x)=>s+x.qty,0),amount:items.reduce((s,x)=>s+x.amount,0),items};
+    }).sort((a,b)=>b.amount-a.amount);
+    return {key:oid,workNo:o.workNo||'—',productName:o.productName||'',orderQty:Number(o.qty)||0,count:list.length,qty:list.reduce((s,w)=>s+w.qty,0),amount:list.reduce((s,w)=>s+w.amount,0),steps,workers,hasOver:steps.some(s=>s.over)};
+  }).sort((a,b)=>b.amount-a.amount);
+}
+function vSalary(){
+  const all=DB.works.slice();
+  const period=state.adminSalaryPeriod||'all';
+  const range=salaryRange(period,state.adminSalaryDay,state.adminSalaryMonth,state.adminSalaryStart,state.adminSalaryEnd);
+  const works=all.filter(w=>inR(w.ts,range));
+  const total=works.reduce((s,w)=>s+w.amount,0);
+  const totalQty=works.reduce((s,w)=>s+w.qty,0);
+  const mode=state.adminSalaryView||'worker';
+  const rows=summarizeByWorker(works);
+  const orders=buildOrderSettlement(works);
+  const details=works.slice().sort((a,b)=>b.ts-a.ts);
+  return `
+  <div class="header"><div class="header-title">💰 加工费统计</div><div class="header-sub">表格化支付单 · 可选日历/月份/区间</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="seg">
+      <div class="seg-item ${mode==='worker'?'on':''}" onclick="state.adminSalaryView='worker';render()">按员工支付表</div>
+      <div class="seg-item ${mode==='order'?'on':''}" onclick="state.adminSalaryView='order';render()">按订单结算</div>
+      <div class="seg-item ${mode==='detail'?'on':''}" onclick="state.adminSalaryView='detail';render()">全部明细</div>
+    </div>
+    ${salaryRangeBar('adminSalary')}
+    <div class="card hero"><div class="hero-label">加工费合计 · ${range.text}</div><div class="hero-money">¥${money(total)}</div><div class="text-sm" style="opacity:.85">${works.length} 笔报工 · 共 ${totalQty} 件</div></div>
+
+    ${mode==='worker'?(rows.length===0?'<div class="empty"><span class="empty-emoji">💤</span>该时段暂无加工费</div>':rows.map(r=>{
+      const open=!!state.adminSalaryOpen[r.id];
+      return `
+    <div class="pay-table">
+      <div class="tbl-head" style="cursor:pointer" onclick="toggleAdminSalary('${r.id}')"><div class="col-name">${r.name} <span class="text-3" style="font-size:11px">${r.workNo}</span></div><div class="col-qty">数量</div><div class="col-amt">¥${money(r.amount)}</div></div>
+      ${open?`<div class="tbl-head" style="background:transparent"><div class="col-name">项目</div><div class="col-qty">数量</div><div class="col-price">单价</div><div class="col-amt">金额</div></div>${r.items.map(it=>`<div class="tbl-row"><div class="col-name">${it.name}</div><div class="col-qty">${it.qty}</div><div class="col-price">¥${money(it.price)}</div><div class="col-amt">¥${money(it.amount)}</div></div>`).join('')}<div class="tbl-row total"><div class="col-name">合计（${r.count} 笔）</div><div class="col-qty">${r.qty}</div><div class="col-price"></div><div class="col-amt">¥${money(r.amount)}</div></div>`:`<div class="tbl-row"><div class="col-name text-3" style="font-size:12px">${r.count} 笔 · 点击展开项目明细</div><div class="col-qty">${r.qty} 件</div><div class="col-amt">¥${money(r.amount)}</div></div>`}
+    </div>`;}).join('')):mode==='order'?(orders.length===0?'<div class="empty"><span class="empty-emoji">💤</span>该时段暂无加工费</div>':orders.map(o=>{
+      const open=!!state.adminSalaryOpen[o.key];
+      return `
+    <div class="pay-table">
+      <div class="tbl-head" style="cursor:pointer" onclick="toggleAdminSalary('${o.key}')"><div class="col-name">${o.workNo} <span class="tag ${o.hasOver?'tag-overdue':'tag-approved'}" style="margin-left:6px;font-size:10.5px">${o.hasOver?'⚠️ 有超量':'✓ 合规'}</span></div><div class="col-amt">¥${money(o.amount)}</div></div>
+      <div class="tbl-row"><div class="col-name text-3" style="font-size:12px">${o.productName} · 订单 ${Number(o.orderQty).toLocaleString()} 件 · ${o.count} 笔报工 · ${o.workers.length} 人参与</div><div class="col-amt text-sm" style="color:var(--primary)">共 ${o.qty} 件</div></div>
+      ${open?`${o.workers.map(wk=>`
+      <div style="border-top:1px solid var(--line)">
+        <div class="row-between" style="padding:10px 12px 2px"><div class="bold">👷 ${wk.name} <span class="text-3" style="font-size:11px">${wk.workNo}</span></div><div class="money">¥${money(wk.amount)}</div></div>
+        <div class="tbl-head" style="background:transparent;padding:4px 12px"><div class="col-name">项目</div><div class="col-qty">数量</div><div class="col-price">单价</div><div class="col-amt">金额</div></div>
+        ${wk.items.map(it=>`<div class="tbl-row" style="padding:6px 12px"><div class="col-name">${it.name}</div><div class="col-qty">${it.qty}</div><div class="col-price">¥${money(it.price)}</div><div class="col-amt">¥${money(it.amount)}</div></div>`).join('')}
+        <div class="tbl-row total" style="padding:6px 12px"><div class="col-name">应发（${wk.count} 笔）</div><div class="col-qty">${wk.qty}</div><div class="col-price"></div><div class="col-amt">¥${money(wk.amount)}</div></div>
+      </div>`).join('')}
+      <div class="tbl-row total"><div class="col-name">本订单结算合计</div><div class="col-qty">${o.qty}</div><div class="col-price"></div><div class="col-amt">¥${money(o.amount)}</div></div>`:`<div class="tbl-row"><div class="col-name text-3" style="font-size:12px">点击展开：各加工人员的项目 · 数量 · 金额</div><div class="col-qty"></div><div class="col-amt">¥${money(o.amount)}</div></div>`}
+    </div>`;}).join('')):(details.length===0?'<div class="empty"><span class="empty-emoji">💤</span>该时段暂无加工费</div>':`<div class="pay-table">
+      <div class="tbl-head"><div style="width:28px">#</div><div style="width:70px">员工</div><div style="width:96px">工单号</div><div style="width:90px">项目</div><div style="width:60px;text-align:right">数量</div><div style="width:56px;text-align:right">单价</div><div style="width:70px;text-align:right">金额</div><div style="width:74px;text-align:right">日期</div></div>
+      ${details.map((w,i)=>{const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};const u=DB.users.find(x=>x.id===w.workerId)||{};return `<div class="tbl-row"><div style="width:28px" class="text-3">${i+1}</div><div style="width:70px">${u.name||'—'}</div><div style="width:96px">${o.workNo||'—'}</div><div style="width:90px">${s.name||w.stepId}</div><div style="width:60px;text-align:right">${w.qty} <span style="color:var(--primary);cursor:pointer" onclick="openAdminWorkEdit('${w.id}')">✏️</span></div><div style="width:56px;text-align:right">¥${money(w.price)}</div><div style="width:70px;text-align:right" class="money-plus">¥${money(w.amount)}</div><div style="width:74px;text-align:right" class="text-3">${dayKey(w.ts).slice(5)}</div></div>`;}).join('')}
+      <div class="tbl-row total"><div style="width:28px"></div><div style="width:70px">合计</div><div style="width:96px">${works.length} 笔</div><div style="width:90px"></div><div style="width:60px;text-align:right">${totalQty}</div><div style="width:56px"></div><div style="width:70px;text-align:right" class="money">¥${money(total)}</div><div style="width:74px"></div></div>
+    </div>`)}
+  </div>`;
+}
+function toggleAdminSalary(id){state.adminSalaryOpen[id]=!state.adminSalaryOpen[id];render();}
+
+/* ---------- 成员管理 ---------- */
+function vAdmins(){
+  const admins=DB.users.filter(u=>u.role==='admin');
+  const workers=DB.users.filter(u=>u.role==='worker');
+  return `
+  <div class="header"><div class="header-title">👥 成员管理</div><div class="header-sub">管理员 ${admins.length} 人 · 员工 ${workers.length} 人</div></div>
+  <div class="page" style="padding-top:0">
+    <div class="card">
+      <div class="card-title">邀请成员</div>
+      <div class="row" style="gap:8px">
+        <div class="seg" style="flex:1;margin:0">
+          <div class="seg-item ${state.inviteRole==='worker'?'on':''}" onclick="state.inviteRole='worker';render()">员工</div>
+          ${isSuper()?`<div class="seg-item ${state.inviteRole==='admin'?'on':''}" onclick="state.inviteRole='admin';render()">管理员</div>`:''}
+        </div>
+        <button class="btn-mini" onclick="createInvite()">生成邀请码</button>
+      </div>
+      <div class="text-sm text-3" style="margin-top:10px">员工扫码加入后需管理员审核启用</div>
+    </div>
+    <div class="card">
+      <div class="card-title">新增${state.inviteRole==='admin'?'管理员':'员工'}（手动）</div>
+      <input class="input" id="aname" placeholder="姓名" style="margin-bottom:8px">
+      <input class="input" id="aphone" placeholder="手机号" style="margin-bottom:8px">
+      <input class="input" id="apwd" placeholder="初始密码（不填默认 123456）" style="margin-bottom:8px">
+      <button class="btn-primary" onclick="addUser()">添加</button>
+    </div>
+    <div class="card">
+      <div class="card-title">管理员 ${isSuper()?'':'（仅最高权限可管理）'}</div>
+      ${admins.map(u=>`<div class="row-between detail-row"><div><div class="bold text-2">${u.name}${u.role==='superadmin'?' <span class=\"tag tag-processing\">最高权限</span>':''}</div><div class="text-sm text-3">${u.phone}</div></div>${isSuper()&&u.role!=='superadmin'?`<button class="btn-mini-red" onclick="removeUser('${u.id}')">移除</button>`:''}</div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">员工</div>
+      ${workers.map(u=>`<div class="row-between detail-row"><div><div class="bold text-2">${u.name}</div><div class="text-sm text-3">${u.phone} · ${u.workNo}</div></div><button class="btn-mini-red" onclick="removeUser('${u.id}')">移除</button></div>`).join('')}
+    </div>
+  </div>`;
+}
+function addUser(){
+  const name=($('aname')?.value||'').trim(), phone=($('aphone')?.value||'').trim(), pwd=($('apwd')?.value||'').trim()||'123456';
+  if(!name||!phone){toast('请填写姓名和手机号');return;}
+  if(DB.users.some(u=>u.phone===phone)){toast('手机号已存在');return;}
+  const role=state.inviteRole;
+  if(role==='admin'&&!isSuper()){toast('仅最高权限可添加管理员');return;}
+  DB.users.push({id:uid('u_'),name,phone,workNo:(role==='admin'?'A':'W')+String(Date.now()).slice(-5),role,status:'active',pwd});
+  toast('已添加');render();
+}
+function addAdmin(){addUser();}
+function removeUser(id){
+  const u=DB.users.find(x=>x.id===id);
+  if(!u)return;
+  if(u.role==='superadmin'){toast('最高权限账号不可删除');return;}
+  if(u.role==='admin'&&!isSuper()){toast('仅最高权限可移除管理员');return;}
+  if(u.role==='admin'&&DB.users.filter(x=>x.role==='admin').length<=1){toast('至少保留一名管理员');return;}
+  /* 级联清除：该员工的报工/申领/改数申请一并删除，工资统计不再显示已删员工 */
+  const wN=DB.works.filter(w=>w.workerId===id).length;
+  const cN=DB.claims.filter(c=>c.workerId===id).length;
+  if(!confirm('确定移除 '+u.name+' 吗？\n其名下 '+wN+' 笔报工、'+cN+' 条申领及全部加工费将一并删除，不可恢复！'))return;
+  DB.works=DB.works.filter(w=>w.workerId!==id);
+  DB.claims=DB.claims.filter(c=>c.workerId!==id);
+  DB.editRequests=(DB.editRequests||[]).filter(r=>r.workerId!==id);
+  DB.users=DB.users.filter(x=>x.id!==id);
+  DB.notices.unshift({id:uid('n_'),type:'system',title:'成员已移除',text:u.name+' 已被移除，其名下 '+wN+' 笔报工记录已清除',ts:Date.now(),read:false});
+  saveDb();
+  toast('已移除并清除相关数据');render();
+}
+function createInvite(){
+  const code=genCode(6);
+  DB.invites.unshift({id:uid('i_'),code,role:state.inviteRole,expireAt:Date.now()+7*864e5,used:false});
+  state.currentQr={code,role:state.inviteRole,roleText:state.inviteRole==='admin'?'管理员':'员工',dots:genQrDots(code)};
+  toast('邀请码已生成');render();
+}
+/* 图表色（避免模板串里的 #） */
+function prevWorkNo(oid){const o=getOrder(oid);return o?o.workNo:'—';}
+function prevWorkerName(uid_){const u=DB.users.find(x=>x.id===uid_);return u?u.name:'—';}
+function genCode(len){const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let o='';for(let i=0;i<len;i++)o+=c[Math.floor(Math.random()*c.length)];return o;}
+function genQrDots(code){
+  /* 真二维码：内容为 注册页链接（带邀请码），手机扫码直达注册并自动填入 */
+  try{
+    if(typeof qrcode==='function'){
+      const base=(location.origin&&location.origin.startsWith('http'))?location.origin+location.pathname:'https://nbxsxsl.github.io/factory-app/';
+      const qr=qrcode(0,'M'); qr.addData(base+'?invite='+code); qr.make();
+      const n=qr.getModuleCount(); const dots=[];
+      for(let y=0;y<n;y++)for(let x=0;x<n;x++) if(qr.isDark(y,x)) dots.push({x,y});
+      state.qrCell=Math.floor(168/n); state.qrSize=n;
+      return dots;
+    }
+  }catch(e){}
+  return [];  /* 库不可用时不渲染伪码，避免误导扫码 */
+}
+function qrModal(){const q=state.currentQr;const cell=state.qrCell||4;return`<div class="mask" onclick="state.currentQr=null;render()"><div class="panel" onclick="event.stopPropagation()">
+  <div style="text-align:center;font-size:17px;font-weight:800;margin-bottom:12px">${q.roleText}邀请</div>
+  <div class="qr-box"><div class="qr-grid">${q.dots.map(d=>`<div class="qr-dot" style="left:${d.x*cell}px;top:${d.y*cell}px;width:${cell}px;height:${cell}px"></div>`).join('')}</div></div>
+  <div class="qr-code-big">${q.code}</div><div class="text-sm text-3" style="text-align:center;margin-top:6px">成员扫码或输入此邀请码加入</div>
+  <div class="row-between" style="gap:8px;margin-top:14px"><button class="btn-ghost" style="flex:1" onclick="copyText('${q.code}')">复制邀请码</button><button class="btn-primary" style="flex:1" onclick="state.currentQr=null;render()">完成</button></div></div></div>`;}
+function copyText(t){navigator.clipboard&&navigator.clipboard.writeText(t);toast('已复制');}
+
+/* =========================================================
+   员工端 —— 可申领：先展示订单列表，点入后申领
+   ========================================================= */
+function vMyOrders(){
+  const me=state.user;
+  const myClaims=DB.claims.filter(c=>c.workerId===me.id);
+  if(!state.pick) state.pick={};
+  if(!state.qty) state.qty={};
+  const orders=DB.orders.filter(o=>o.steps&&o.steps.length>0).map(o=>{
+    const steps=orderStepsWithRemain(o.id).map(s=>{
+      const mine=myClaims.find(c=>(c.items||[]).some(it=>it.stepId===s.id));
+      return {...s, mine:!!mine, disabled:!!mine||s.remainQty<=0};
+    });
+    const available=steps.filter(s=>!s.disabled).length;
+    const pickedCount=Object.keys(state.pick[o.id]||{}).length;
+    const submitted=steps.length>0&&steps.every(s=>s.mine);
+    return {...o, steps, available, total:steps.length, pickedCount, submitted};
+  });
+  let noticeCount=myClaims.filter(c=>c.status==='pending'||c.status==='rejected').length;
+  const remind=DB.settings.deliveryRemindDays;
+  noticeCount+=DB.orders.filter(o=>{const d=daysUntil(o.deliveryDate);return o.deliveryDate&&d!==null&&d<=remind;}).length;
+  return `
+  <div class="header row-between">
+    <div><div class="header-title">🔧 员工端</div><div class="header-sub">你好，${me.name} · 点开订单后选择项目申领</div></div>
+    <div class="bell" onclick="go('notices')">🔔${noticeCount>0?`<div class="badge">${noticeCount}</div>`:''}</div>
+  </div>
+  <div class="page" style="padding-top:0">
+  <div class="text-sm text-3" style="margin:0 0 10px 2px">共 ${orders.length} 张订单，点击进入选择项目</div>
+  ${orders.length===0?'<div class="empty"><span class="empty-emoji">📦</span>暂无可申领的订单</div>':orders.map(o=>{
+    const d=daysUntil(o.deliveryDate);
+    return `
+  <div class="card order-card" onclick="openClaimOrder('${o.id}')">
+    <div class="row-between"><div class="bold">${o.workNo}</div><div class="tag tag-processing">${o.hasSwitch?'有开关':'无开关'}</div></div>
+    <div class="text-sm text-3" style="margin-top:4px">${o.productName} · 成品数量 ${o.qty}</div>
+    <div class="row-between" style="margin-top:9px">
+      <div class="text-sm text-3">${o.deliveryDate?('交期 ${o.deliveryDate}' + (d!==null?(` <span class="tag ${d<0?'tag-overdue':d<=remind?'tag-warn':'tag-done'}">${d<0?'逾期'+(-d)+'天':'剩'+d+'天'}</span>`):'')):'未设交期'}</div>
+      <div class="tag ${o.available>0?'tag-approved':'tag-overdue'}">${o.available>0?('可申领 '+o.available+' 项'):'已分完'}</div>
+    </div>
+    ${o.pickedCount?`<div class="text-sm" style="color:var(--primary);margin-top:8px;font-weight:700">已选 ${o.pickedCount} 项待提交</div>`:''}
+  </div>`;}).join('')}
+  </div>`;
+}
+function openClaimOrder(oid){go('claimOrder');state.myOrdersOrderId=oid;render();}
+
+/* ---------- 员工端 —— 申领某订单（项目勾选 + 数量） ---------- */
+function vClaimOrder(){
+  const o=getOrder(state.myOrdersOrderId);
+  if(!o) return `<div class="header"><div class="header-title">申领</div></div><div class="empty">订单不存在</div>`;
+  const me=state.user;
+  const myClaims=DB.claims.filter(c=>c.workerId===me.id);
+  const map={pending:['待审批','tag-pending'],approved:['已同意','tag-approved'],rejected:['已驳回','tag-rejected']};
+  if(!state.pick) state.pick={};
+  if(!state.qty) state.qty={};
+  const rows=orderStepsWithRemain(o.id).map(s=>{
+    const mine=myClaims.find(c=>(c.items||[]).some(it=>it.stepId===s.id));
+    const picked=!!(state.pick[o.id]&&state.pick[o.id][s.id]);
+    const qtyVal=state.qty[o.id]&&state.qty[o.id][s.id]!==undefined?state.qty[o.id][s.id]:'';
+    return {...s, mine, mineStatus:mine?map[mine.status]:null, disabled:!!mine||s.remainQty<=0, picked, qtyVal};
+  });
+  const claimable=rows.some(s=>!s.disabled);
+  const pickedCount=rows.filter(s=>s.picked).length;
+  const d=daysUntil(o.deliveryDate);
+  return `
+  <div class="header row-between">
+    <div><div class="header-title" style="font-size:19px">${o.workNo}</div><div class="header-sub">${o.productName} · 成品 ${o.qty}</div></div>
+    <div class="tag ${o.hasSwitch?'tag-processing':'tag-done'}">${o.hasSwitch?'有开关':'无开关'}</div>
+  </div>
+  <div class="page" style="padding-top:0">
+    <button class="btn-ghost" style="width:100%;margin-bottom:12px" onclick="go('myOrders')">← 返回订单列表</button>
+    ${o.deliveryDate?`<div class="card" style="padding:11px 14px"><div class="row-between"><div class="text-sm text-3">交期 ${o.deliveryDate}</div><div class="tag ${d<0?'tag-overdue':d<=DB.settings.deliveryRemindDays?'tag-warn':'tag-done'}">${d<0?'逾期'+(-d)+'天':(d===0?'今天到期':'剩'+d+'天')}</div></div></div>`:''}
+    ${craftCard(o.id)}
+    <div class="card">
+      <div class="card-title">选择项目并填写申领数量</div>
+      ${rows.map(s=>`
+      <div class="step-item">
+        <div class="row-between">
+          <div style="flex:1;min-width:0">
+            <div class="bold step-name">${s.name}</div>
+            <div class="text-sm text-3" style="margin-top:3px">剩余 <b style="color:${s.remainQty>0?'var(--primary)':'var(--text-3)'}">${s.remainQty}</b> / ${s.assignedQty}　单价 ¥${s.price||0}</div>
+            <div class="text-sm" style="margin-top:2px;color:${s.reported>=s.totalQty?'var(--green)':'var(--text-3)'}">已报 ${s.reported||0} / ${s.totalQty} 件</div>
+          </div>
+          ${s.mine?`<div class="tag ${s.mineStatus[1]}">${s.mineStatus[0]}</div>`
+            :s.remainQty<=0?`<div class="tag tag-overdue">已分完</div>`
+            :`<div class="check ${s.picked?'on':''}" onclick="pickStep('${o.id}','${s.id}')">${s.picked?'✓':''}</div>`}
+        </div>
+        ${s.picked&&!s.mine&&s.remainQty>0?`
+        <div class="qty-row">
+          <div class="text-sm text-3" style="white-space:nowrap">申领数量</div>
+          <input class="input qty-input" type="number" min="1" max="${s.remainQty}" placeholder="最多 ${s.remainQty}"
+            value="${s.qtyVal}" oninput="setQty('${o.id}','${s.id}',this.value)">
+          <div class="text-sm" style="white-space:nowrap;cursor:pointer;color:var(--primary);font-weight:700" onclick="fillMax('${o.id}','${s.id}')">填满</div>
+        </div>`:''}
+      </div>`).join('')}
+    </div>
+    ${claimable?`<button class="btn-primary" style="position:sticky;bottom:10px" onclick="submitClaim('${o.id}')">申领选中项${pickedCount?`（${pickedCount}）`:''}</button>`:'<div class="card"><div class="text-sm text-3" style="text-align:center">本单该项目均已申领或已分完</div></div>'}
+  </div>`;
+}
+/* 勾选 / 取消勾选 */
+function pickStep(oid,sid){
+  if(!state.pick) state.pick={};
+  if(!state.qty) state.qty={};
+  const o=state.pick[oid]||(state.pick[oid]={});
+  if(o[sid]){ delete o[sid]; if(state.qty[oid]) delete state.qty[oid][sid]; }
+  else {
+    o[sid]=true;
+    const sr=orderStepsWithRemain(oid).find(x=>x.id===sid);
+    if(!state.qty[oid]) state.qty[oid]={};
+    state.qty[oid][sid]=String(sr?sr.remainQty:'');   /* 默认填满剩余量，可改 */
+  }
+  render();
+}
+function setQty(oid,sid,v){
+  if(!state.qty) state.qty={};
+  if(!state.qty[oid]) state.qty[oid]={};
+  state.qty[oid][sid]=v;
+  /* 不整体 render，避免输入框失焦；仅校验最大值提示 */
+}
+function fillMax(oid,sid){
+  const sr=orderStepsWithRemain(oid).find(x=>x.id===sid);
+  if(!state.qty) state.qty={};
+  if(!state.qty[oid]) state.qty[oid]={};
+  state.qty[oid][sid]=String(sr?sr.remainQty:'');
+  render();
+}
+/* 兼容旧名 */
+function toggleStep(oid,sid){pickStep(oid,sid);}
+
+function submitClaim(oid){
+  const o=getOrder(oid);
+  const pickMap=state.pick[oid]||{};
+  const sel=o.steps.filter(s=>pickMap[s.id]);
+  if(sel.length===0){toast('请先勾选要申领的项目');return;}
+  const remainMap={};orderStepsWithRemain(oid).forEach(s=>remainMap[s.id]=s.remainQty);
+  const items=[];
+  for(const s of sel){
+    const q=Number((state.qty[oid]||{})[s.id]);
+    if(!q||q<=0){toast('请填写「'+s.name+'」的申领数量');return;}
+    if(q>remainMap[s.id]){toast('「'+s.name+'」超过剩余 '+remainMap[s.id]);return;}
+    items.push({stepId:s.id, qty:q});
+  }
+  DB.claims.push({id:uid('c_'),orderId:oid,items,itemIds:items.map(it=>it.stepId),workerId:state.user.id,status:'pending',time:todayStr()+' '+new Date().toTimeString().slice(0,5)});
+  DB.notices.unshift({id:uid('n_'),type:'claim',title:'新申领待审批',text:`${state.user.name} 提交了 ${o.workNo} 的申领（${items.length} 项）`,ts:Date.now(),read:false});
+  state.pick[oid]={}; state.qty[oid]={};
+  toast('申领已提交，等待审批');
+  state.myClaimsTab='all'; go('myClaims');
+}
+
+/* ---------- 员工端 —— 我的申领 ---------- */
+function vMyClaims(){
+  const tab=state.myClaimsTab||'all';
+  const map={pending:['待审批','tag-pending'],approved:['已同意','tag-approved'],rejected:['已驳回','tag-rejected']};
+  let list=DB.claims.filter(c=>c.workerId===state.user.id).map(c=>{const o=getOrder(c.orderId)||{steps:[]};
+    const items=(c.items||c.itemIds.map(sid=>({stepId:sid}))).map(it=>{const s=(o.steps||[]).find(x=>x.id===it.stepId)||{};return{name:s.name||it.stepId,price:s.price||0,qty:it.qty||0};});
+    const m=map[c.status];return{...c,workNo:o.workNo||'—',productName:o.productName||'',items,statusText:m[0],statusClass:m[1],canWork:c.status==='approved'};}).sort((a,b)=>(b.time||'').localeCompare(a.time||''));
+  if(tab!=='all')list=list.filter(c=>c.status===tab);
+  return `
+  <div class="header"><div class="header-title">📝 我的申领</div><div class="header-sub">查看审批进度，通过后可报工</div></div>
+  <div class="tabs" style="padding-left:16px">${[['all','全部'],['pending','待审批'],['approved','已同意'],['rejected','已驳回']].map(([k,t])=>`<div class="tab ${tab===k?'on':''}" onclick="state.myClaimsTab='${k}';render()">${t}</div>`).join('')}</div>
+  <div class="page" style="padding-top:0">
+  ${list.length===0?'<div class="empty"><span class="empty-emoji">🗂️</span>这里还没有申领记录</div>':list.map(c=>`
+  <div class="card">
+    <div class="row-between"><div class="bold">${c.workNo}</div><div class="tag ${c.statusClass}">${c.statusText}</div></div>
+    <div class="text-sm text-3" style="margin-top:4px">${c.productName} · ${c.time||''}</div>
+    <div class="divider"></div>
+    ${c.items.map(it=>`<div class="row-between" style="margin-top:6px"><div class="text-2">${it.name}${it.qty?' × '+it.qty:''}</div><div class="money-sm">${it.price?'¥'+it.price:'—'}</div></div>`).join('')}
+    ${c.reason?`<div class="text-sm" style="color:var(--red);margin-top:8px">驳回原因：${c.reason}</div>`:''}
+    ${c.canWork?`<button class="btn-primary" style="margin-top:14px" onclick="openWork('${c.id}')">去报工</button>`:''}
+  </div>`).join('')}
+  </div>`;
+}
+function openWork(cid){state.workClaimId=cid;go('work');}
+
+/* ---------- 员工端 —— 报工 ---------- */
+function vWork(){
+  const me=state.user;
+  let claim=state.workClaimId?DB.claims.find(c=>c.id===state.workClaimId):null;
+  if(!claim)claim=DB.claims.filter(c=>c.workerId===me.id&&c.status==='approved').sort((a,b)=>(b.time||'').localeCompare(a.time||''))[0];
+  if(!claim)return`<div class="header"><div class="header-title">✍️ 报工</div><div class="header-sub">每天不限次数</div></div><div class="empty"><span class="empty-emoji">⏳</span>暂无已同意的申领<div class="text-sm text-3" style="margin-top:8px">请先到「可申领」提交申领并等待管理员同意</div></div>`;
+  const o=getOrder(claim.orderId)||{steps:[]};
+  const items=(claim.items||[]).map(it=>{const s=(o.steps||[]).find(x=>x.id===it.stepId)||{name:it.stepId,price:0};return{id:it.stepId,name:s.name,price:Number(s.price)||0,totalQty:it.qty||0,orderQty:Number(s.totalQty)||Number(o.qty)||0};});
+  const works=DB.works.filter(w=>w.workerId===me.id&&isToday(w.ts));
+  const todayAmount=works.reduce((s,w)=>s+w.amount,0);
+  const todayList=works.slice().sort((a,b)=>b.ts-a.ts).map(w=>({...w,stepName:(o.steps.find(s=>s.id===w.stepId)||{}).name||w.stepId,timeText:new Date(w.ts).toTimeString().slice(0,5)}));
+  return `
+  <div class="header"><div class="header-title">✍️ 报工</div><div class="header-sub">每天不限次数，随时记录完成情况</div></div>
+  <div class="page" style="padding-top:0">
+  <div class="card"><div class="row-between"><div class="bold">${o.workNo}</div><div class="tag tag-approved">已同意</div></div><div class="text-sm text-3" style="margin-top:4px">${o.productName}</div><div class="divider"></div><div class="row-between"><div class="text-3 text-sm">今日已报工 ${works.length} 次 · ${works.reduce((s,w)=>s+w.qty,0).toLocaleString()} 件</div><div class="money-sm">¥${money(todayAmount)}</div></div></div>
+  ${craftCard(o.id)}
+  ${(()=>{const p=orderReportProgress(claim.orderId);return `<div class="card"><div class="row-between"><div class="card-title" style="margin:0">📊 订单进度</div><div class="text-sm text-3">${p.percent}%</div></div>${p.rows.map(r=>`<div class="prog-row"><div class="row-between"><div class="text-2">${r.name}</div><div class="text-sm ${r.reported>=r.total?'prog-full':'text-3'}">${r.reported} / ${r.total}</div></div><div class="prog-bar"><div class="prog-fill ${r.reported>=r.total?'prog-fill-full':''}" style="width:${r.percent}%"></div></div></div>`).join('')}</div>`;})()}
+  <div class="card"><div class="card-title">录入完成数量</div>
+    ${items.map(it=>{const rep=DB.works.filter(w=>w.orderId===claim.orderId&&w.stepId===it.id).reduce((s,w)=>s+w.qty,0);const total=it.orderQty;const remain=total-rep;return `<div class="work-row"><div class="work-info"><div class="bold">${it.name}</div><div class="text-sm text-3">单价 ¥${it.price} · 申领 ${it.totalQty}</div>${total>0?`<div class="text-sm" style="color:${remain>0?'var(--green)':'var(--red)'}">已报 ${rep} / 订单 ${total} · ${remain>0?'还可报 '+remain+' 件':'已报满，不可再报'}</div>`:''}</div>
+      <div class="work-input-wrap"><input class="input work-input" type="number" placeholder="数量" id="wi_${it.id}"><button class="btn-primary work-submit" onclick="submitWork('${claim.id}','${it.id}',${it.price})">报工</button></div></div>`;}).join('')}</div>
+  <div class="card"><div class="card-title">今日报工明细</div>
+    ${todayList.length===0?'<div class="text-sm text-3">今天还没有报工记录</div>':todayList.map(w=>`<div class="row-between detail-row"><div><div class="text-2">${w.stepName} × ${w.qty}</div><div class="text-sm text-3">${w.timeText}</div></div><div class="row" style="gap:8px;align-items:center"><div class="text-sm" style="color:var(--primary);cursor:pointer" onclick="openWorkEdit('${w.id}')">✏️改</div><div class="text-sm" style="color:var(--red);cursor:pointer" onclick="withdrawWork('${w.id}')">↩️撤回</div><div class="money-plus">+¥${money(w.amount)}</div></div></div>`).join('')}</div>
+  </div>`;
+}
+function withdrawWork(wid){
+  const w=DB.works.find(x=>x.id===wid); if(!w)return;
+  if(!isToday(w.ts)){toast('只能撤回今天的报工');return;}
+  if(!confirm('确定撤回这笔报工吗？（'+w.qty+'件）'))return;
+  const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};
+  DB.works=DB.works.filter(x=>x.id!==wid);
+  DB.editRequests=(DB.editRequests||[]).filter(r=>r.workId!==wid);
+  DB.notices.unshift({id:uid('n_'),type:'claim',title:'员工撤回报工',text:`${state.user.name} 撤回了 ${o.workNo||''}「${s.name||''} × ${w.qty}」的报工`,ts:Date.now(),read:false});
+  saveDb(); toast('已撤回'); render();
+}
+function submitWork(cid,sid,price){
+  const el=$('wi_'+sid);const qty=el?Number(el.value):0;
+  if(!qty||qty<=0){toast('请输入完成数量');return;}
+  const claim=DB.claims.find(c=>c.id===cid);
+  // 校验：项目单项合计不可超过订单数量（≤ 可以）
+  const order=getOrder(claim.orderId)||{steps:[],qty:0};
+  const step=(order.steps||[]).find(x=>x.id===sid)||{};
+  const total=Number(step.totalQty)||Number(order.qty)||0;
+  const reported=DB.works.filter(w=>w.orderId===claim.orderId&&w.stepId===sid).reduce((s,w)=>s+w.qty,0);
+  const remain=total-reported;
+  if(qty>remain){
+    alert('⚠️ 报工失败 · 超出订单数量\n「'+(step.name||sid)+'」已报 '+reported+' / '+total+' 件，最多再报 '+Math.max(0,remain)+' 件');
+    return;
+  }
+  DB.works.push({id:uid('k_'),claimId:cid,workerId:state.user.id,orderId:claim.orderId,stepId:sid,qty,price,amount:Number((qty*price).toFixed(2)),ts:Date.now()});
+  toast('已报工 ¥'+money(qty*price));render();
+}
+
+/* ---------- 报工数量修改（员工申请→管理员审核；管理员可直接改） ---------- */
+function openWorkEdit(wid){ state.workEditId=wid; state.workEditVal=''; state.workEditAdmin=false; render(); }
+function openAdminWorkEdit(wid){ state.workEditId=wid; state.workEditVal=''; state.workEditAdmin=true; render(); }
+function setWorkEditVal(v){ state.workEditVal=v; }
+function workEditModal(){
+  const w=DB.works.find(x=>x.id===state.workEditId); if(!w)return '';
+  const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};
+  const pend=!state.workEditAdmin&&DB.editRequests.some(r=>r.workId===w.id&&r.status==='pending');
+  return `<div class="mask" onclick="state.workEditId=null;render()"><div class="panel" onclick="event.stopPropagation()">
+    <div class="panel-title">✏️ 修改报工数量</div>
+    <div class="panel-sub">${s.name||''} · 当前 ${w.qty} 件 · ¥${money(w.amount)}</div>
+    ${pend?'<div class="text-sm" style="color:var(--orange)">该笔已有一份待审核的修改申请，请等待管理员处理</div>':`
+    <input class="input" type="number" style="width:100%" placeholder="输入正确数量" value="${state.workEditVal||''}" oninput="setWorkEditVal(this.value)">
+    <button class="btn-primary" style="margin-top:10px;width:100%" onclick="confirmWorkEdit()">${state.workEditAdmin?'直接修改生效':'提交修改申请'}</button>
+    ${state.workEditAdmin?'':'<div class="text-sm text-3" style="margin-top:6px">提交后需管理员审核，通过后才生效并重算金额</div>'}`}
+    <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="state.workEditId=null;render()">取消</button>
+  </div></div>`;
+}
+function applyWorkQty(w,nq){ w.qty=nq; const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};const p=Number(s.price)||w.price||0;w.price=p;w.amount=Number((w.qty*p).toFixed(2)); }
+function confirmWorkEdit(){
+  const w=DB.works.find(x=>x.id===state.workEditId); if(!w)return;
+  const nq=Number(state.workEditVal);
+  if(!nq||nq<=0){toast('请输入正确数量');return;}
+  if(nq===w.qty){toast('数量未变化');return;}
+  if(state.workEditAdmin){
+    applyWorkQty(w,nq);
+    const u=DB.users.find(x=>x.id===w.workerId)||{};
+    DB.notices.unshift({id:uid('n_'),type:'claim',title:'管理员修改报工',text:`${u.name||''} 的报工数量已由管理员改为 ${nq} 件，金额已重算`,ts:Date.now(),read:false});
+    state.workEditId=null; saveDb(); toast('已修改并生效'); render(); return;
+  }
+  DB.editRequests.push({id:uid('e_'),workId:w.id,workerId:w.workerId,orderId:w.orderId,stepId:w.stepId,oldQty:w.qty,newQty:nq,status:'pending',time:todayStr()+' '+new Date().toTimeString().slice(0,5)});
+  DB.notices.unshift({id:uid('n_'),type:'system',title:'修改申请已提交',text:'报工数量修改申请已提交，等待管理员审核',ts:Date.now(),read:false});
+  state.workEditId=null; saveDb(); toast('已提交，等待管理员审核'); render();
+}
+function approveWorkEdit(rid){
+  const r=DB.editRequests.find(x=>x.id===rid); if(!r)return;
+  const w=DB.works.find(x=>x.id===r.workId);
+  if(w)applyWorkQty(w,r.newQty);
+  r.status='approved';
+  DB.notices.unshift({id:uid('n_'),type:'claim',title:'报工修改已通过',text:`报工数量 ${r.oldQty} → ${r.newQty} 件已生效，金额已重算`,ts:Date.now(),read:false});
+  saveDb(); toast('已通过并生效'); render();
+}
+function rejectWorkEdit(rid){
+  const r=DB.editRequests.find(x=>x.id===rid); if(!r)return;
+  r.status='rejected'; r.reason='管理员驳回';
+  DB.notices.unshift({id:uid('n_'),type:'claim',title:'报工修改被驳回',text:`${r.oldQty} → ${r.newQty} 件的修改申请被驳回`,ts:Date.now(),read:false});
+  saveDb(); toast('已驳回'); render();
+}
+
+/* ---------- 员工端 —— 我的加工费（汇总表/明细 + 日历） ---------- */
+function vMySalary(){
+  const me=state.user;const mine=DB.works.filter(w=>w.workerId===me.id);
+  const period=state.workerSalaryPeriod||'all';
+  const range=salaryRange(period,state.workerSalaryDay,state.workerSalaryMonth,state.workerSalaryStart,state.workerSalaryEnd);
+  const works=mine.filter(w=>inR(w.ts,range));
+  const total=works.reduce((s,w)=>s+w.amount,0);
+  const totalQty=works.reduce((s,w)=>s+w.qty,0);
+  const mode=state.workerSalaryView||'summary';
+  // 项目汇总
+  const imap=new Map();
+  works.forEach(w=>{const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};const nm=s.name||w.stepId;if(!imap.has(nm))imap.set(nm,{name:nm,qty:0,amount:0,price:w.price||0,count:0});const it=imap.get(nm);it.qty+=w.qty;it.amount+=w.amount;it.count+=1;});
+  const items=[...imap.values()];
+  const details=works.slice().sort((a,b)=>b.ts-a.ts);
+  return `
+  <div class="header"><div class="header-title">💰 我的加工费</div><div class="header-sub">${me.name} · 按日/月/区间查看</div></div>
+  <div class="page" style="padding-top:0">
+  <div class="card hero"><div class="hero-label">加工费合计 · ${range.text}</div><div class="hero-money">¥${money(total)}</div><div class="text-sm" style="opacity:.85">${works.length} 笔 · 共 ${totalQty} 件</div></div>
+  <div class="seg">
+    <div class="seg-item ${mode==='summary'?'on':''}" onclick="state.workerSalaryView='summary';render()">项目汇总</div>
+    <div class="seg-item ${mode==='byorder'?'on':''}" onclick="state.workerSalaryView='byorder';render()">按订单</div>
+    <div class="seg-item ${mode==='detail'?'on':''}" onclick="state.workerSalaryView='detail';render()">全部明细</div>
+  </div>
+  ${salaryRangeBar('workerSalary')}
+  ${works.length===0?'<div class="empty"><span class="empty-emoji">💤</span>该时段暂无加工费</div>':''}
+  ${mode==='summary'&&items.length>0?`<div class="pay-table">
+    <div class="tbl-head"><div class="col-name">项目</div><div class="col-qty">数量</div><div class="col-price">单价</div><div class="col-amt">金额</div></div>
+    ${items.map(it=>`<div class="tbl-row"><div class="col-name">${it.name}</div><div class="col-qty">${it.qty}</div><div class="col-price">¥${money(it.price)}</div><div class="col-amt">¥${money(it.amount)}</div></div>`).join('')}
+    <div class="tbl-row total"><div class="col-name">合计（${works.length} 笔）</div><div class="col-qty">${totalQty}</div><div class="col-price"></div><div class="col-amt">¥${money(total)}</div></div>
+  </div>`:''}
+  ${mode==='byorder'?(()=>{const omap=new Map();works.forEach(w=>{if(!omap.has(w.orderId))omap.set(w.orderId,{no:(getOrder(w.orderId)||{}).workNo||'—',qty:0,amount:0,count:0,steps:new Map()});const g=omap.get(w.orderId);g.qty+=w.qty;g.amount+=w.amount;g.count+=1;const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};const nm=s.name||w.stepId;if(!g.steps.has(nm))g.steps.set(nm,{qty:0,amount:0});const st=g.steps.get(nm);st.qty+=w.qty;st.amount+=w.amount;});const groups=[...omap.entries()].sort((a,b)=>b[0]<a[0]?-1:1);return groups.map(([oid,g])=>`<div class="card"><div class="row-between"><div class="bold">📋 ${g.no}</div><div class="money-plus">¥${money(g.amount)}</div></div><div class="text-sm text-3" style="margin:4px 0 8px">${g.count} 笔 · 共 ${g.qty} 件</div><div class="pay-table">${[...g.steps.entries()].map(([nm,st])=>`<div class="tbl-row"><div class="col-name">${nm}</div><div class="col-qty">${st.qty}</div><div class="col-amt">¥${money(st.amount)}</div></div>`).join('')}</div></div>`).join('');})():''}
+  ${mode==='detail'&&details.length>0?`<div class="pay-table">
+    <div class="tbl-head"><div style="width:28px">#</div><div style="width:96px">工单号</div><div style="width:90px">项目</div><div style="width:60px;text-align:right">数量</div><div style="width:56px;text-align:right">单价</div><div style="width:70px;text-align:right">金额</div><div style="width:74px;text-align:right">日期</div></div>
+    ${details.map((w,i)=>{const o=getOrder(w.orderId)||{steps:[]};const s=(o.steps||[]).find(x=>x.id===w.stepId)||{};return `<div class="tbl-row"><div style="width:28px" class="text-3">${i+1}</div><div style="width:96px">${o.workNo||'—'}</div><div style="width:90px">${s.name||w.stepId}</div><div style="width:60px;text-align:right">${w.qty} <span style="color:var(--primary);cursor:pointer" onclick="openWorkEdit('${w.id}')">✏️</span></div><div style="width:56px;text-align:right">¥${money(w.price)}</div><div style="width:70px;text-align:right" class="money-plus">¥${money(w.amount)}</div><div style="width:74px;text-align:right" class="text-3">${dayKey(w.ts).slice(5)}</div></div>`;}).join('')}
+    <div class="tbl-row total"><div style="width:28px"></div><div style="width:96px">合计</div><div style="width:90px">${works.length} 笔</div><div style="width:60px;text-align:right">${totalQty}</div><div style="width:56px"></div><div style="width:70px;text-align:right" class="money">¥${money(total)}</div><div style="width:74px"></div></div>
+  </div>`:''}
+  </div>`;
+}
+function toggleWorkerSalary(id){state.workerSalaryOpen[id]=!state.workerSalaryOpen[id];render();}
+
+/* ---------- 螺丝弹窗 ---------- */
+function openScrewModal(){ state.showScrewModal=true; render(); }
+function screwModal(){
+  const e=state.entry;
+  return `<div class="mask" onclick="state.showScrewModal=false;render()">
+    <div class="panel" onclick="event.stopPropagation()">
+      <div class="panel-title">🔩 螺丝类型确认</div>
+      <div class="panel-sub">规则：螺丝数量 = 成品数量 → 电路板单螺丝<br/>螺丝数量 &gt; 成品数量（成倍）→ 成品螺丝</div>
+      ${e.screwList.map((s,i)=>{const cur=state.screwChoice['k'+i]||s.type;return `
+      <div class="modal-row">
+        <div style="flex:1;min-width:0"><div class="modal-name">${s.name}</div><div class="modal-meta">数量 ${Number(s.qty).toLocaleString()} · 成品 ${Number(e.qty).toLocaleString()}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span class="text-sm text-3" style="white-space:nowrap">型号</span><input class="screw-model-input" value="${s.model||''}" placeholder="如 2*5" oninput="setScrewModel(${i},this.value)"></div>
+        </div>
+        <div class="row" style="gap:6px">
+          <div class="mini-btn ${cur==='电路板单螺丝'?'on':''}" onclick="setScrewChoice(${i},'电路板单螺丝')">单螺丝</div>
+          <div class="mini-btn ${cur==='成品螺丝'?'on':''}" onclick="setScrewChoice(${i},'成品螺丝')">成品螺丝</div>
+        </div>
+      </div>`;}).join('')}
+      <button class="btn-primary" style="margin-top:8px" onclick="confirmScrewModal()">确认并自动勾选项目</button>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="state.showScrewModal=false;render()">先跳过</button>
+    </div></div>`;
+}
+
+/* =========================================================
+   提示
+   ========================================================= */
+let toastTimer=null;
+function toast(msg){
+  let t=document.querySelector('.toast'); if(t)t.remove();
+  t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.remove(),2000);
+}
+function bindClock2(){bindClock();}
+setInterval(()=>{const c=$('clock');if(c)c.textContent=new Date().toTimeString().slice(0,5);},30000);
+
+/* 同步状态指示器：右下角小胶囊，显示数据是否已备份到本机 */
+function syncIndicator(){
+  let el=document.getElementById('sync-dot');
+  if(!el){
+    el=document.createElement('div'); el.id='sync-dot';
+    el.style.cssText='position:fixed;top:5px;left:50%;transform:translateX(-50%);z-index:9999;font-size:10.5px;padding:2px 9px;border-radius:999px;background:rgba(0,0,0,.38);color:#fff;font-family:sans-serif;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  const m={idle:'○ 待同步',syncing:'◌ 同步中…',ok:'● 已备份到本机',err:'⚠ 备份失败',offline:'○ 离线(仅本地)'};
+  const s=__syncStatus||'idle';
+  el.textContent=m[s]||s;
+  el.style.background=s==='ok'?'rgba(34,160,80,.85)':s==='err'?'rgba(200,60,50,.85)':s==='syncing'?'rgba(0,120,200,.85)':'rgba(0,0,0,.55)';
+}
+setInterval(syncIndicator,2000); syncIndicator();
+
+/* 启动：自动恢复登录态 —— token 优先（7天有效期，过期自动跳登录页），其次记住的密码 */
+(async function(){
+  try{
+    const token=localStorage.getItem('factory_token');
+    if(token){
+      const base=await probeApi();
+      try{
+        const r=await fetchTimeout(base+'/api/check',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({token})});
+        const j=await r.json();
+        if(j&&j.ok&&j.user){
+          if(j.db&&j.db.users&&j.db.orders){ Object.keys(DB).forEach(k=>delete DB[k]); Object.assign(DB,j.db); try{ localStorage.setItem('factory_db_v2', JSON.stringify(DB)); }catch(e){} }
+          state.user=DB.users.find(x=>x.phone===j.user.phone)||j.user;
+          state.rememberPwd=true; afterLogin(); return;
+        }
+      }catch(e){}
+      try{ localStorage.removeItem('factory_token'); }catch(e){}   /* token 过期 → 清除，走下方密码或登录页 */
+    }
+    const saved=JSON.parse(localStorage.getItem('factory_login')||'null');
+    if(saved&&saved.phone&&saved.pwd){
+      const u=DB.users.find(x=>x.phone===saved.phone&&x.pwd===saved.pwd);
+      if(u){ state.user=u; state.rememberPwd=true; afterLogin(); return; }
+      /* 本地无此账号（如换设备/数据被清）：服务器验证恢复 */
+      try{
+        const base=await probeApi();
+        const r=await fetchTimeout(base+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:saved.phone,pwd:saved.pwd})});
+        const j=await r.json();
+        if(j&&j.ok&&j.user){ applyLoginResult(j); state.rememberPwd=true; afterLogin(); return; }
+      }catch(e){}
+    }
+  }catch(e){}
+})();
+/* 扫码进入：URL 带 ?invite=CODE → 记住邀请码，注册页自动填入 */
+let __urlInvite='';
+(function(){
+  try{ __urlInvite=(new URLSearchParams(location.search).get('invite')||'').toUpperCase(); }catch(e){}
+  if(__urlInvite){
+    setTimeout(()=>{
+      if(state.user) return;
+      state.view='register'; render();
+    }, 400);
+  }
+})();
+render();
+</script>
+</body>
+</html>
